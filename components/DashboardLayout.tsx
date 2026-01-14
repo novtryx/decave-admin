@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import React, { useState } from 'react';
-import { Sidebar } from './Sidebar';
-import { Header } from './Header';
+import React, { useState } from "react";
+import { Sidebar } from "./Sidebar";
+import { Header } from "./Header";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -12,14 +12,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
 
-  const handleLogout = () => {
-    console.log('Logout clicked');
-    // Add your logout logic here
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar */}
+    <div className="min-h-screen bg-slate-50">
+      {/* Sidebar (fixed, outside content flow) */}
       <Sidebar
         isOpen={isSidebarOpen}
         isMinimized={isSidebarMinimized}
@@ -27,16 +22,21 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         onToggleMinimize={() => setIsSidebarMinimized(!isSidebarMinimized)}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Content wrapper */}
+      <div
+        className={`
+          flex flex-col min-h-screen transition-all duration-300
+          ${isSidebarMinimized ? "lg:ml-24" : "lg:ml-64"}
+        `}
+      >
         {/* Header */}
         <Header
           onMenuClick={() => setIsSidebarOpen(true)}
-          onLogout={handleLogout}
+          onLogout={() => {}}
         />
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-auto p-4 bg-[#0F0F0F] pt-8 text-white">
+        {/* Main content (ONLY thing that scrolls) */}
+        <main className="flex-1 overflow-y-auto bg-[#0F0F0F] p-4 pt-8 text-white">
           {children}
         </main>
       </div>

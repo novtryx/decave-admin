@@ -10,6 +10,8 @@ import {
 } from "react-icons/tb";
 import { LuChartColumn, LuCreditCard } from "react-icons/lu";
 import { FaHandshakeAngle } from "react-icons/fa6";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -31,46 +33,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   onToggleMinimize,
 }) => {
-  const [activeItem, setActiveItem] = useState("dashboard");
-
+  // const [activeItem, setActiveItem] = useState("dashboard");
+const pathname = usePathname();
   const menuItems: MenuItem[] = [
     {
       id: "dashboard",
       label: "Dashboard",
       icon: <TbLayoutDashboard size={22} />,
-      href: "#",
+      href: "/dashboard",
     },
     {
       id: "events",
       label: "Events",
       icon: <MdOutlineCalendarMonth size={22} />,
-      href: "#",
+      href: "/events",
     },
     {
       id: "sales",
       label: "Sales & Transactions",
       icon: <LuCreditCard size={22} />,
-      href: "#",
+      href: "/sales-and-transactions",
     },
     {
       id: "partners",
       label: "Partners & Sponsors",
       icon: <FaHandshakeAngle size={22} />,
-      href: "#",
+      href: "/partners-and-sponsors",
     },
     {
       id: "analytics",
       label: "Analytics",
       icon: <LuChartColumn size={22} />,
-      href: "#",
+      href: "/analytics",
     },
     {
       id: "settings",
       label: "Settings",
       icon: <RiSettings3Line size={22} />,
-      href: "#",
+      href: "/settings",
     },
   ];
+
+  const activePath = pathname === "/" ? "/dashboard" : pathname;
 
   return (
     <>
@@ -85,12 +89,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:static inset-y-0 left-0 z-50
+          fixed inset-y-0 left-0 z-50
           bg-[#151515] text-white
           transform transition-all duration-300 ease-in-out
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           ${isMinimized ? "lg:w-24" : "lg:w-64"}
-          w-64 lg:w-auto flex flex-col
+          w-64  flex flex-col
         `}
       >
         {/* Logo Section */}
@@ -172,45 +176,49 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 py-4">
-          <ul className="space-y-2">
-            {menuItems.map((item) => (
-              <li key={item.id}>
-                <a
-                  href={item.href}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setActiveItem(item.id);
-                    if (window.innerWidth < 1024) onClose();
-                  }}
-                  className={`
-                    flex items-center px-4 py-3 rounded-lg
-                    transition-all duration-200
-                    ${
-                      activeItem === item.id
-                        ? "bg-[#d4af37] text-white font-medium shadow-lg"
-                        : "text-[#6F6F6F] hover:bg-gray-800 hover:text-white"
-                    }
-                    ${isMinimized ? "justify-center" : "space-x-3"}
-                  `}
-                  title={isMinimized ? item.label : ""}
-                >
-                  <span className={activeItem === item.id ? "text-white" : ""}>
-                    {item.icon}
-                  </span>
-                  <span
-                    className={`
-    ${isMinimized ? "lg:hidden" : "block"}
-  `}
-                  >
-                    {item.label}
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+       {/* Navigation */}
+<nav className="flex-1 overflow-y-auto px-4 py-4">
+  <ul className="space-y-2">
+    {menuItems.map((item) => {
+      // const isActive = activePath === item.href;
+
+      const isActive =
+  activePath === item.href ||
+  activePath.startsWith(`${item.href}/`);
+  
+      return (
+        <li key={item.id}>
+          <Link
+            href={item.href}
+            onClick={() => {
+              if (window.innerWidth < 1024) onClose();
+            }}
+            className={`
+              flex items-center px-4 py-3 rounded-lg
+              transition-all duration-200
+              ${
+                isActive
+                  ? "bg-[#d4af37] text-white font-medium shadow-lg"
+                  : "text-[#6F6F6F] hover:bg-gray-800 hover:text-white"
+              }
+              ${isMinimized ? "justify-center" : "space-x-3"}
+            `}
+            title={isMinimized ? item.label : ""}
+          >
+            <span className={isActive ? "text-white" : ""}>
+              {item.icon}
+            </span>
+
+            <span className={`${isMinimized ? "lg:hidden" : "block"}`}>
+              {item.label}
+            </span>
+          </Link>
+        </li>
+      );
+    })}
+  </ul>
+</nav>
+
 
         {/* User Section at Bottom */}
         <div className="border-t border-gray-800 p-4">

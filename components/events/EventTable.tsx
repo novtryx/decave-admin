@@ -1,7 +1,11 @@
 "use client"
 
 import React from 'react';
-import { AiOutlineEye, AiOutlineEdit, AiOutlineCopy, AiOutlineDelete } from 'react-icons/ai';
+import { AiOutlineEye, AiOutlineEdit, AiOutlineDelete } from 'react-icons/ai';
+import { FiEdit2 } from 'react-icons/fi';
+import { LuChevronsUpDown } from 'react-icons/lu';
+import { RiDeleteBin6Line } from 'react-icons/ri';
+import { TbCopy } from 'react-icons/tb';
 
 type EventStatus = 'live' | 'draft' | 'past' | 'upcoming';
 
@@ -23,6 +27,14 @@ interface EventTableProps {
   onCopy?: (event: Event) => void;
   onDelete?: (event: Event) => void;
 }
+
+ const SortableHeader = ({ label }: { label: string }) => (
+  <div className="flex items-center gap-1 cursor-pointer select-none">
+    <span>{label}</span>
+    <LuChevronsUpDown className="w-4 h-4 text-gray-500" />
+  </div>
+);
+
 
 export const EventTable: React.FC<EventTableProps> = ({
   events,
@@ -46,6 +58,7 @@ export const EventTable: React.FC<EventTableProps> = ({
       upcoming: 'UPCOMING',
     };
 
+    
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
         {status === 'live' && (
@@ -69,26 +82,26 @@ export const EventTable: React.FC<EventTableProps> = ({
       <table className="w-full">
         <thead>
           <tr className="border-b border-gray-800">
-            <th className="text-left p-4 text-gray-400 text-sm font-medium">
-              Event Name ⋄
+            <th className="p-4 text-gray-400 text-sm font-medium">
+              <SortableHeader label="Event Name" />
             </th>
-            <th className="text-left p-4 text-gray-400 text-sm font-medium">
-              Status ⋄
+            <th className="p-4 text-gray-400 text-sm font-medium">
+              <SortableHeader label="Status" />
             </th>
-            <th className="text-left p-4 text-gray-400 text-sm font-medium">
-              Date ⋄
+            <th className="p-4 text-gray-400 text-sm font-medium">
+              <SortableHeader label="Date" />
             </th>
-            <th className="text-left p-4 text-gray-400 text-sm font-medium">
-              Location ⋄
+            <th className="p-4 text-gray-400 text-sm font-medium">
+              <SortableHeader label="Location" />
             </th>
-            <th className="text-left p-4 text-gray-400 text-sm font-medium">
-              Tickets Sold ⋄
+            <th className="p-4 text-gray-400 text-sm font-medium">
+              <SortableHeader label="Tickets Sold" />
             </th>
-            <th className="text-left p-4 text-gray-400 text-sm font-medium">
-              Revenue ⋄
+            <th className="p-4 text-gray-400 text-sm font-medium">
+              <SortableHeader label="Revenue" />
             </th>
-            <th className="text-left p-4 text-gray-400 text-sm font-medium">
-              Actions ⋄
+            <th className="p-4 text-gray-400 text-sm font-medium">
+              <SortableHeader label="Actions" />
             </th>
           </tr>
         </thead>
@@ -130,7 +143,7 @@ export const EventTable: React.FC<EventTableProps> = ({
                       className="text-gray-400 hover:text-white transition-colors"
                       aria-label="Edit event"
                     >
-                      <AiOutlineEdit size={18} />
+                      <FiEdit2 size={18} />
                     </button>
                   )}
                   {onCopy && (event.status === 'upcoming' || event.status === 'draft') && (
@@ -139,16 +152,16 @@ export const EventTable: React.FC<EventTableProps> = ({
                       className="text-gray-400 hover:text-white transition-colors"
                       aria-label="Copy event"
                     >
-                      <AiOutlineCopy size={18} />
+                      <TbCopy size={18} />
                     </button>
                   )}
                   {onDelete && (
                     <button
                       onClick={() => onDelete(event)}
-                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      className="text-[#EF4444] transition-colors"
                       aria-label="Delete event"
                     >
-                      <AiOutlineDelete size={18} />
+                      <RiDeleteBin6Line size={18} />
                     </button>
                   )}
                 </div>

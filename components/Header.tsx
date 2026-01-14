@@ -1,8 +1,4 @@
 
-// ============================================
-// 2. HEADER COMPONENT (Header.tsx)
-// ============================================
-
 import React, { useState } from 'react';
 import { AiOutlineMenu, AiOutlineBell, AiOutlineLogout } from 'react-icons/ai';
 import { FaRegBell } from 'react-icons/fa6';

@@ -140,7 +140,7 @@ const Analytics: React.FC = () => {
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <RevenueTrend data={currentData.revenueTrend} />
+          {/* <RevenueTrend data={currentData.revenueTrend} /> */}
           <TicketsSold data={currentData.ticketsSold} />
           <div className="col-span-1 lg:col-span-2">
             <EventsPerformance data={currentData.eventPerformance} />

@@ -1,4 +1,5 @@
 import React from 'react';
+import { LuChevronsUpDown } from 'react-icons/lu';
 
 export interface Transaction {
   id: string;
@@ -19,15 +20,23 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Completed':
-        return 'text-green-500';
+        return 'bg-[#0F2A1A] text-[#22C55E]';
       case 'Pending':
-        return 'text-yellow-500';
+        return 'bg-[#2A1F0F] text-[#F59E0B]';
       case 'Failed':
-        return 'text-red-500';
+        return 'bg-[#2A0F0F] text-[#EF4444]';
       default:
         return 'text-gray-500';
     }
   };
+
+  const SortableHeader = ({ label }: { label: string }) => (
+    <div className="flex items-center gap-1 cursor-pointer select-none">
+      <span>{label}</span>
+      <LuChevronsUpDown className="w-4 h-4 text-gray-500" />
+    </div>
+  );
+  
 
   return (
     <div className="w-full bg-zinc-900 rounded-lg overflow-hidden">
@@ -35,29 +44,29 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
         <table className="w-full">
           <thead>
             <tr className="border-b border-zinc-800">
-              <th className="text-left p-4 text-sm font-medium text-gray-400">
-                Transaction ID <span className="ml-1">⋄</span>
+              <th className="p-4 text-sm font-medium text-[#B3B3B3]">
+                <SortableHeader label="Transaction ID" />
               </th>
-              <th className="text-left p-4 text-sm font-medium text-gray-400">
-                Event <span className="ml-1">⋄</span>
+              <th className="p-4 text-sm font-medium text-[#B3B3B3]">
+                <SortableHeader label="Event" />
               </th>
-              <th className="text-left p-4 text-sm font-medium text-gray-400">
-                Ticket Type <span className="ml-1">⋄</span>
+              <th className="p-4 text-sm font-medium text-[#B3B3B3]">
+                <SortableHeader label="Ticket Type" />
               </th>
-              <th className="text-left p-4 text-sm font-medium text-gray-400">
-                Quantity <span className="ml-1">⋄</span>
+              <th className="p-4 text-sm font-medium text-[#B3B3B3]">
+                <SortableHeader label="Quantity" />
               </th>
-              <th className="text-left p-4 text-sm font-medium text-gray-400">
-                Amount <span className="ml-1">⋄</span>
+              <th className="p-4 text-sm font-medium text-[#B3B3B3]">
+                <SortableHeader label="Amount" />
               </th>
-              <th className="text-left p-4 text-sm font-medium text-gray-400">
-                Buyer <span className="ml-1">⋄</span>
+              <th className="p-4 text-sm font-medium text-[#B3B3B3]">
+                <SortableHeader label="Buyer" />
               </th>
-              <th className="text-left p-4 text-sm font-medium text-gray-400">
-                Status <span className="ml-1">⋄</span>
+              <th className="p-4 text-sm font-medium text-[#B3B3B3]">
+                <SortableHeader label="Status" />
               </th>
-              <th className="text-left p-4 text-sm font-medium text-gray-400">
-                Date <span className="ml-1">⋄</span>
+              <th className="p-4 text-sm font-medium text-[#B3B3B3]">
+                <SortableHeader label="Date" />
               </th>
             </tr>
           </thead>
@@ -67,16 +76,16 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 key={index}
                 className="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors"
               >
-                <td className="p-4 text-sm text-gray-300">{transaction.id}</td>
-                <td className="p-4 text-sm text-gray-300">{transaction.event}</td>
-                <td className="p-4 text-sm text-gray-300">{transaction.ticketType}</td>
-                <td className="p-4 text-sm text-gray-300">{transaction.quantity}</td>
-                <td className="p-4 text-sm text-gray-300">{transaction.amount}</td>
-                <td className="p-4 text-sm text-gray-300">{transaction.buyer}</td>
-                <td className={`p-4 text-sm font-medium ${getStatusColor(transaction.status)}`}>
+                <td className="p-4 text-sm text-[#F4F4F5] font-semibold">{transaction.id}</td>
+                <td className="p-4 text-sm text-[#F4F4F5]">{transaction.event}</td>
+                <td className="p-4 text-sm text-[#9F9FA9]">{transaction.ticketType}</td>
+                <td className="p-4 text-sm text-[#9F9FA9]">{transaction.quantity}</td>
+                <td className="p-4 text-sm text-[#9F9FA9]">{transaction.amount}</td>
+                <td className="p-4 text-sm text-[#9F9FA9]">{transaction.buyer}</td>
+                <td className={`p-2 my-3 text-sm rounded-full flex items-center justify-center font-medium ${getStatusColor(transaction.status)}`}>
                   {transaction.status}
                 </td>
-                <td className="p-4 text-sm text-gray-300">{transaction.date}</td>
+                <td className="p-4 text-sm text-[#9F9FA9]">{transaction.date}</td>
               </tr>
             ))}
           </tbody>

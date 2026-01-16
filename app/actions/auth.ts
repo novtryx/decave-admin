@@ -17,10 +17,9 @@ export async function loginAction(
   return res;
 }
 
-
 export async function verifyOTPAction(
   email: string,
-  otp: string
+  otp: string  
 ) {
   const res = await publicFetch<{ token: string }>("/auth/verify-otp", {
     method: "POST",
@@ -29,7 +28,6 @@ export async function verifyOTPAction(
   setAccessToken(res.token)
   return res;
 }
-
 
 export async function resendOTPAction(
   email: string,

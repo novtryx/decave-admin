@@ -104,36 +104,38 @@ export default function SalesAndTransactions() {
       <TransactionStats />
 
        {/* Search Function */}
-            <section className="flex gap-4 mb-10">
-              <div className="w-full relative">
-                <input
-                  type="text"
-                  className="bg-[#18181B] w-full p-3 pl-10 rounded-xl border border-[#27272A] placeholder:text-[#6F6F6F]"
-                  placeholder="Search by event, transaction ID, or email..."
-                />
-                <FiSearch className="absolute top-4 left-3 text-lg text-[#6F6F6F]" />
-              </div>
-      
-              <div>
-                <SortDropdown
-                  options={periodOptions}
-                  onChange={(value) => console.log("Sorted by:", value)}
-                />
-              </div>
-      
-              <div>
-                <SortDropdown
-                  options={statusOptions}
-                  placeholder="Status"
-                  onChange={(value) => console.log("Sorted by:", value)}
-                />
-              </div>
-            </section>
+        <section className="flex gap-4 mb-10">
+          <div className="w-full relative">
+            <input
+              type="text"
+              className="bg-[#18181B] w-full p-3 pl-10 rounded-xl border border-[#27272A] placeholder:text-[#6F6F6F]"
+              placeholder="Search by event, transaction ID, or email..."
+            />
+            <FiSearch className="absolute top-4 left-3 text-lg text-[#6F6F6F]" />
+          </div>
+  
+          <div>
+            <SortDropdown
+              options={periodOptions}
+              onChange={(value) => console.log("Sorted by:", value)}
+            />
+          </div>
+  
+          <div>
+            <SortDropdown
+              options={statusOptions}
+              placeholder="Status"
+              onChange={(value) => console.log("Sorted by:", value)}
+            />
+          </div>
+        </section>
 
             {/* Transaction Table */}
-            <TransactionTable 
-                transactions={sampleTransactions}
-            />
+            <section className="mb-20">
+              <TransactionTable 
+                  transactions={sampleTransactions}
+              />
+            </section>
     </DashboardLayout>
   );
 }

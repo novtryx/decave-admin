@@ -25,7 +25,7 @@ export async function verifyOTPAction(
     method: "POST",
     body: { email, otp },
   });
-  setAccessToken(res.token)
+  await setAccessToken(res.token)
   return res;
 }
 

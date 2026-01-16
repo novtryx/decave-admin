@@ -1,7 +1,7 @@
 import FlashCard from "@/components/dashboard/FlashCard";
 
 interface AnalyticsStatsProps {
-  data: AnalyticsData;
+  data: any;
 }
 
 export default function AnalyticsStats({data}: AnalyticsStatsProps) {

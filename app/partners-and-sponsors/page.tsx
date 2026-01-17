@@ -6,6 +6,7 @@ import PartnerStats from "./PartnerStats";
 import { SortDropdown } from "@/components/events/SortDropdown";
 import { FiSearch } from "react-icons/fi";
 import PartnerSponsorSection from "./PartnerSponsorSection";
+import Link from "next/link";
 
 export default function PartnersAndSponsors() {
   const periodOptions = [
@@ -27,10 +28,10 @@ export default function PartnersAndSponsors() {
         </div>
 
         {/* Add Partner Button */}
-        <div className="flex gap-2 items-center rounded-xl bg-[#cca33a] px-4 py-3 font-semibold">
+        <Link href="/partners-and-sponsors/add-partner" className="flex gap-2 items-center rounded-xl bg-[#cca33a] px-4 py-3 font-semibold">
           <FaPlus size={20} />
           Add Partner
-        </div>
+        </Link>
       </section>
 
       {/* Partner Stats Section */}

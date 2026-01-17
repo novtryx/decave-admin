@@ -18,7 +18,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onLogout }) => {
       <div className="flex items-center space-x-4">
         <button
           onClick={onMenuClick}
-          className="lg:hidden p-2 hover:bg-slate-100 rounded-lg transition-colors"
+          className="lg:hidden p-2 hover:bg-gray-800 rounded-lg transition-colors"
         >
           <AiOutlineMenu size={24} className="text-[#F4F4F5]" />
         </button>

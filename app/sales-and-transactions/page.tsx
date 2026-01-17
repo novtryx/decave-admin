@@ -85,7 +85,7 @@ export default function SalesAndTransactions() {
   return (
     <DashboardLayout>
       {/* Heading */}
-      <section className="mb-10 flex items-center justify-between">
+      <section className="mb-10 flex flex-col lg:flex-row gap-4 lg:gap-0 items-center justify-between">
         <div>
           <h3 className="text-[#F9F7F4] text-2xl font-semibold mb-2">Sales and Transactions</h3>
           <p className="text-[#B3B3B3]">View ticket sales and payment history</p>
@@ -104,7 +104,7 @@ export default function SalesAndTransactions() {
       <TransactionStats />
 
        {/* Search Function */}
-        <section className="flex gap-4 mb-10">
+        <section className="flex flex-col lg:flex-row gap-4 mb-10">
           <div className="w-full relative">
             <input
               type="text"

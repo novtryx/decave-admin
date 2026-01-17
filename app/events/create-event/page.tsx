@@ -95,7 +95,7 @@ export default function CreateEvent() {
   return (
     <DashboardLayout>
       {/* Heading */}
-      <section className="flex justify-between gap-4 sm:gap-0">
+      <section className="flex flex-col lg:flex-row justify-between gap-4 sm:gap-0">
         <div className="flex gap-4 sm:gap-6 items-center">
           <FaArrowLeftLong className="text-lg sm:text-xl" />
           <div>
@@ -105,7 +105,7 @@ export default function CreateEvent() {
         </div>
 
         {/* Buttons */}
-        <div className="flex flex-col lg:flex-row items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button className="border-2 cursor-pointer flex items-center gap-2 text-[#cca33a] border-[#cca33a] rounded-full py-2 px-4 sm:px-6 text-sm sm:text-base">
             <LuSave />
             Save Later

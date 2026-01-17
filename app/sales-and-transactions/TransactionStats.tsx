@@ -35,7 +35,7 @@ export default function TransactionStats() {
         }
     ]
     return (
-        <section className="my-10 grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <section className="my-10 grid grid-cols-2 lg:grid-cols-4 gap-4">
             {statsData.map((item) => (
                 <FlashCard key={item.id}>
                     <div className="flex flex-col gap-2">

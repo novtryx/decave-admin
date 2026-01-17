@@ -19,7 +19,7 @@ export default function PartnersAndSponsors() {
   return (
     <DashboardLayout>
       {/* Heading */}
-      <section className="mb-10 flex items-center justify-between">
+      <section className="mb-10 flex flex-col lg:flex-row gap-4 lg:gap-0 items-center justify-between">
         <div>
           <h3 className="text-[#F9F7F4] text-2xl font-semibold mb-2">
             Partners & Sponsors
@@ -38,7 +38,7 @@ export default function PartnersAndSponsors() {
       <PartnerStats />
 
       {/* Search Function */}
-      <section className="flex gap-4 mb-10">
+      <section className="flex flex-col lg:flex-row gap-4 mb-10">
         <div className="w-full relative">
           <input
             type="text"

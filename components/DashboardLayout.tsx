@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
+import { FullScreenLoader } from "./FullScreenLoader";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <FullScreenLoader/>
       {/* Sidebar (fixed, outside content flow) */}
       <Sidebar
         isOpen={isSidebarOpen}

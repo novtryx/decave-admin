@@ -3,15 +3,29 @@ import React, { useState } from 'react';
 import { AiOutlineMenu, AiOutlineBell, AiOutlineLogout } from 'react-icons/ai';
 import { FaRegBell } from 'react-icons/fa6';
 import { TbLogout } from 'react-icons/tb';
+import { LogoutModal } from './LogOutModal';
+import { logoutAction } from '@/app/actions/auth';
+import { useRouter } from 'next/router';
+import { useLoadingStore } from '@/store/LoadingState';
 
 interface HeaderProps {
   onMenuClick: () => void;
   onLogout: () => void;
 }
 
+
 export const Header: React.FC<HeaderProps> = ({ onMenuClick, onLogout }) => {
   const [notificationCount] = useState(13);
+  const [showLogout, setShowLogout] = useState<boolean>(false)
+  const {startLoading, stopLoading} = useLoadingStore()
 
+  const handleLogout = async() => {
+    startLoading()
+    const res = await logoutAction()
+    
+    window.location.href = "/"
+    stopLoading()
+  }
   return (
     <header className="h-23 bg-[#151515] flex items-center justify-between px-4 lg:px-6">
       {/* Left Section */}
@@ -60,13 +74,18 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onLogout }) => {
           </div>
         {/* Logout */}
         <button
-          onClick={onLogout}
-          className="flex items-center space-x-2 px-4 py-2 hover:bg-[#F4F4F5] rounded-lg transition-colors"
+          onClick={() => setShowLogout(true)}
+          className="flex items-center space-x-2 px-4 py-2 hover:bg-[#F4F4F5] cursor-pointer rounded-lg transition-colors"
         >
-          <span className="hidden sm:inline text-[#EF4444] font-medium">Logout</span>
+          <text className="hidden sm:inline text-[#EF4444] font-medium">Logout</text>
           <TbLogout className='text-2xl text-[#ef4444]' />
         </button>
       </div>
+       <LogoutModal
+        isOpen={showLogout}
+        onCancel={() => setShowLogout(false)}
+        onConfirm={handleLogout}
+      />
     </header>
   );
 };

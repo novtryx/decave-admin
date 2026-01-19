@@ -41,7 +41,7 @@ export async function resendOTPAction(
 }
 
 
-export async function logoutOTPAction(
+export async function logoutAction(
   
 ) {
   const res = await protectedFetch<{ message: string, success: boolean }>("/auth/logout", {

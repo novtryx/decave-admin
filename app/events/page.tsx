@@ -1,14 +1,17 @@
 "use client";
 
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { EventTable, Event } from "@/components/events/EventTable";
+import { EventTable } from "@/components/events/EventTable";
 import { SortDropdown } from "@/components/events/SortDropdown";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { FaPlus } from "react-icons/fa6";
 import { FiSearch } from "react-icons/fi";
+import { getAllEvents } from "../actions/event";
+import { Event } from "@/types/eventsType";
 
 export default function Events() {
-  const sampleEvents: Event[] = [
+  const sampleEvents = [
     {
       id: "1",
       name: "Bass Revolution",
@@ -60,6 +63,17 @@ export default function Events() {
       revenue: 2000000,
     },
   ];
+  const [eventData, setEventData] = useState<Event[]>([])
+
+  useEffect(() => {
+    const fetchAllEvents = async() => {
+      const res = await getAllEvents()
+
+      setEventData(res.data)
+    }
+
+    fetchAllEvents()
+  }, [])
 
   const sortOptions = [
     { label: "All", value: "all" },
@@ -109,7 +123,7 @@ export default function Events() {
       {/* Events table Section */}
       <section className="mb-40">
         <EventTable
-          events={sampleEvents}
+          events={eventData}
           onView={(event) => console.log("View:", event)}
           onEdit={(event) => console.log("Edit:", event)}
           onCopy={(event) => console.log("Copy:", event)}

@@ -1,5 +1,7 @@
 "use client"
 
+import { calculateTotalTickets, formatDate, getEventStatus } from '@/constants/functions';
+import { Event } from '@/types/eventsType';
 import React from 'react';
 import { AiOutlineEye, AiOutlineEdit, AiOutlineDelete } from 'react-icons/ai';
 import { FiEdit2 } from 'react-icons/fi';
@@ -9,16 +11,8 @@ import { TbCopy } from 'react-icons/tb';
 
 type EventStatus = 'live' | 'draft' | 'past' | 'upcoming';
 
-export interface Event {
-  id: string;
-  name: string;
-  status: EventStatus;
-  date: string;
-  location: string;
-  ticketsSold: number;
-  ticketsTotal: number;
-  revenue: number;
-}
+
+
 
 interface EventTableProps {
   events: Event[];
@@ -107,25 +101,26 @@ export const EventTable: React.FC<EventTableProps> = ({
         </thead>
         <tbody>
           {events.map((event) => (
-            <tr key={event.id} className="border-b border-gray-800/50 hover:bg-gray-900/30 transition-colors">
-              <td className="p-4 text-white font-medium">{event.name}</td>
-              <td className="p-4">{getStatusBadge(event.status)}</td>
-              <td className="p-4 text-gray-300">{event.date}</td>
-              <td className="p-4 text-gray-300">{event.location}</td>
+            <tr key={event._id} className="border-b border-gray-800/50 hover:bg-gray-900/30 transition-colors">
+              <td className="p-4 text-white font-medium">{event.eventDetails.eventTitle}</td>
+              <td className="p-4">{getStatusBadge("live")}</td>
+              <td className="p-4 text-gray-300">{formatDate(event.eventDetails.endDate)}</td>
+              <td className="p-4 text-gray-300">{event.eventDetails.venue}</td>
               <td className="p-4">
                 <div className="flex flex-col gap-1">
                   <span className="text-white font-medium">
-                    {event.ticketsSold} / {event.ticketsTotal}
+                    {calculateTotalTickets(event.tickets).totalSoldTickets} / {calculateTotalTickets(event.tickets).totalInitialTickets}
                   </span>
                   <div className="w-32 h-1.5 bg-gray-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-blue-500 rounded-full transition-all"
-                      style={{ width: `${getProgressPercentage(event.ticketsSold, event.ticketsTotal)}%` }}
+                      style={{ width: `${getProgressPercentage(calculateTotalTickets(event.tickets).totalSoldTickets, calculateTotalTickets(event.tickets).totalInitialTickets)}%` }}
                     ></div>
                   </div>
                 </div>
               </td>
-              <td className="p-4 text-white font-medium">{formatCurrency(event.revenue)}</td>
+              {/* <td className="p-4 text-white font-medium">{formatCurrency(event.revenue)}</td> */}
+              <td className="p-4 text-white font-medium">{"#20,000"}</td>
               <td className="p-4">
                 <div className="flex items-center gap-3">
                   {onView && (
@@ -137,7 +132,7 @@ export const EventTable: React.FC<EventTableProps> = ({
                       <AiOutlineEye size={18} />
                     </button>
                   )}
-                  {onEdit && event.status === 'draft' && (
+                  {onEdit && getEventStatus(event) === 'draft' && (
                     <button
                       onClick={() => onEdit(event)}
                       className="text-gray-400 hover:text-white transition-colors"
@@ -146,7 +141,7 @@ export const EventTable: React.FC<EventTableProps> = ({
                       <FiEdit2 size={18} />
                     </button>
                   )}
-                  {onCopy && (event.status === 'upcoming' || event.status === 'draft') && (
+                  {onCopy && (getEventStatus(event) === 'upcoming' || getEventStatus(event) === 'draft') && (
                     <button
                       onClick={() => onCopy(event)}
                       className="text-gray-400 hover:text-white transition-colors"

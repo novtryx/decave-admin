@@ -5,7 +5,7 @@ export async function protectedFetch<T>(
   url: string,
   options?: Parameters<typeof fetcher>[1]
 ) {
-  const token = getAccessToken();
+  const token = await getAccessToken();
 
   if (!token) {
     throw new Error("Not authenticated");
@@ -18,3 +18,5 @@ export async function protectedFetch<T>(
     },
   });
 }
+
+

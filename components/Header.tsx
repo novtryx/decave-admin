@@ -77,7 +77,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onLogout }) => {
           onClick={() => setShowLogout(true)}
           className="flex items-center space-x-2 px-4 py-2 hover:bg-[#F4F4F5] cursor-pointer rounded-lg transition-colors"
         >
-          <text className="hidden sm:inline text-[#EF4444] font-medium">Logout</text>
+          <p className="hidden sm:inline text-[#EF4444] font-medium">Logout</p>
           <TbLogout className='text-2xl text-[#ef4444]' />
         </button>
       </div>

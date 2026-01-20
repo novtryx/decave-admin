@@ -88,7 +88,7 @@ export default function OtpForm({ onBack, email }: OtpFormProps) {
     <>
       {/* Success Alert */}
       {showSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 top-4 flex justify-center bg-black/50">
           <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-6 shadow-xl">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20">

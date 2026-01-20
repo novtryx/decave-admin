@@ -25,3 +25,4 @@ export async function fetcher<T>(
 
   return res.json();
 }
+

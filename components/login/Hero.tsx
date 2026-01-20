@@ -51,7 +51,7 @@ export default function Hero({open, setOpen}: HeroProps) {
             and redefine nightlife.
           </p>
 
-          <button onClick={() => setOpen(true)} className="group mt-10 inline-flex items-center gap-2 rounded-full bg-linear-to-r from-yellow-400 to-amber-500 px-8 py-3 font-medium text-white transition hover:scale-105">
+          <button onClick={() => setOpen(true)} className="group mt-10 inline-flex items-center gap-2 cursor-pointer rounded-full bg-linear-to-r from-yellow-400 to-amber-500 px-8 py-3 font-medium text-white transition hover:scale-105">
             Login Admin
             <FiArrowRight className="transition group-hover:translate-x-1" />
           </button>

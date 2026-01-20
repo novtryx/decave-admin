@@ -11,6 +11,8 @@
 import { useState } from "react"
 import { IoChevronDown, IoCalendarOutline, IoTimeOutline, IoImageOutline, IoEyeOffOutline } from "react-icons/io5"
 import { FiArrowRight } from "react-icons/fi"
+import { uploadImage } from "@/app/actions/upload";
+import ImageUpload from "@/components/Image";
 
 interface StepProps {
   step: number;
@@ -32,9 +34,13 @@ export default function EventDetails({ step, setStep }: StepProps) {
   const [eventVisibility, setEventVisibility] = useState(false)
   const [bannerFile, setBannerFile] = useState<File | null>(null)
 
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
+      // const res = await uploadImage(e.target.files[0])
+
+      
       setBannerFile(e.target.files[0])
+      console.log("res==", bannerFile);
     }
   }
 
@@ -113,7 +119,7 @@ export default function EventDetails({ step, setStep }: StepProps) {
         </div>
 
         {/* Right Column - Event Banner */}
-        <div>
+        {/* <div>
           <label className="block text-sm mb-2">
             Event Banner <span className="text-red-500">*</span>
           </label>
@@ -133,7 +139,8 @@ export default function EventDetails({ step, setStep }: StepProps) {
               <p className="text-xs text-gray-600 mt-1">JPG, JPEG, PNG less than 1MB</p>
             </label>
           </div>
-        </div>
+        </div> */}
+        <ImageUpload label="Event Banner" />
       </div>
 
       {/* Date and Time */}

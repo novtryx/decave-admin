@@ -1,50 +1,254 @@
-// export default function EventDetails() {
-//     return (
-//         <div>
-//             Event Details
-//         </div>
-//     )
-// }
+"use client";
 
+import { useState } from "react";
+import {
+  IoChevronDown,
+  IoCalendarOutline,
+  IoTimeOutline,
+  IoEyeOffOutline,
+} from "react-icons/io5";
+import { FiArrowRight } from "react-icons/fi";
+import { DayPicker, DateRange } from "react-day-picker";
+import { format } from "date-fns";
+import "react-day-picker/dist/style.css";
 
-
-import { useState } from "react"
-import { IoChevronDown, IoCalendarOutline, IoTimeOutline, IoImageOutline, IoEyeOffOutline } from "react-icons/io5"
-import { FiArrowRight } from "react-icons/fi"
+import ImageUpload from "@/components/Image";
+import { useEventStore } from "@/store/create-events/EventDetails";
+import { CreateEventAction } from "@/app/actions/event";
+import { useRouter } from "next/navigation";
+import Spinner from "@/components/Spinner";
 
 interface StepProps {
   step: number;
   setStep: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export default function EventDetails({ step, setStep }: StepProps) {
-  const [eventType, setEventType] = useState("")
-  const [eventTitle, setEventTitle] = useState("")
-  const [eventTheme, setEventTheme] = useState("")
-  const [supportingText, setSupportingText] = useState("")
-  const [date, setDate] = useState("")
-  const [startTime, setStartTime] = useState("")
-  const [endTime, setEndTime] = useState("")
-  const [venue, setVenue] = useState("")
-  const [fullAddress, setFullAddress] = useState("")
-  const [primaryColor, setPrimaryColor] = useState("#CCA33A")
-  const [secondaryColor, setSecondaryColor] = useState("#001D3D")
-  const [eventVisibility, setEventVisibility] = useState(false)
-  const [bannerFile, setBannerFile] = useState<File | null>(null)
+interface ValidationErrors {
+  eventType?: string;
+  eventTitle?: string;
+  eventTheme?: string;
+  supportingText?: string;
+  bannerFile?: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+  venue?: string;
+  fullAddress?: string;
+}
 
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setBannerFile(e.target.files[0])
+export default function EventDetails({ step, setStep }: StepProps) {
+  const {
+    eventType,
+    eventTitle,
+    eventTheme,
+    supportingText,
+    startDateTime,
+    endDateTime,
+    venue,
+    fullAddress,
+    primaryColor,
+    secondaryColor,
+    eventVisibility,
+    bannerFile,
+    setField,
+    setDateTime,
+  } = useEventStore();
+
+  /** Local state */
+  const [range, setRange] = useState<DateRange | undefined>();
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [submitError, setSubmitError] = useState<string>("");
+  
+  const router = useRouter();
+
+  /** Combine date + time → MongoDB Date */
+  const buildDateTime = (date: Date, time: string) => {
+    const [h, m] = time.split(":").map(Number);
+    const d = new Date(date);
+    d.setHours(h || 0, m || 0, 0, 0);
+    return d;
+  };
+
+  /** Handle date selection */
+  const handleDateSelect = (value?: DateRange) => {
+    setRange(value);
+    // Clear date error when user selects a date
+    if (value?.from) {
+      setErrors(prev => ({ ...prev, date: undefined }));
     }
-  }
+
+    if (!value?.from) return;
+
+    const from = value.from;
+    const to = value.to ?? value.from;
+
+    if (startTime && endTime) {
+      setDateTime(buildDateTime(from, startTime), buildDateTime(to, endTime));
+    }
+  };
+
+  const formattedDate =
+    range?.from
+      ? range.to
+        ? `${format(range.from, "dd MMM yyyy")} - ${format(
+            range.to,
+            "dd MMM yyyy"
+          )}`
+        : format(range.from, "dd MMM yyyy")
+      : "";
+
+  /** Validate all required fields */
+  const validateForm = (): boolean => {
+    const newErrors: ValidationErrors = {};
+
+    // Event Type
+    if (!eventType || eventType.trim() === "") {
+      newErrors.eventType = "Event type is required";
+    }
+
+    // Event Title
+    if (!eventTitle || eventTitle.trim() === "") {
+      newErrors.eventTitle = "Event title is required";
+    } else if (eventTitle.trim().length < 3) {
+      newErrors.eventTitle = "Event title must be at least 3 characters";
+    }
+
+    // Event Theme
+    if (!eventTheme || eventTheme.trim() === "") {
+      newErrors.eventTheme = "Event theme is required";
+    }
+
+    // Supporting Text
+    if (!supportingText || supportingText.trim() === "") {
+      newErrors.supportingText = "Supporting text is required";
+    } else if (supportingText.trim().length < 10) {
+      newErrors.supportingText = "Supporting text must be at least 10 characters";
+    }
+
+    // Banner Image
+    if (!bannerFile || !bannerFile.url) {
+      newErrors.bannerFile = "Event banner is required";
+    }
+
+    // Date
+    if (!range?.from) {
+      newErrors.date = "Event date is required";
+    }
+
+    // Start Time
+    if (!startTime) {
+      newErrors.startTime = "Start time is required";
+    }
+
+    // End Time
+    if (!endTime) {
+      newErrors.endTime = "End time is required";
+    }
+
+    // Validate end time is after start time
+    if (startTime && endTime && range?.from) {
+      const start = buildDateTime(range.from, startTime);
+      const end = buildDateTime(range.to ?? range.from, endTime);
+      
+      if (end <= start) {
+        newErrors.endTime = "End time must be after start time";
+      }
+    }
+
+    // Venue
+    if (!venue || venue.trim() === "") {
+      newErrors.venue = "Venue is required";
+    }
+
+    // Full Address
+    if (!fullAddress || fullAddress.trim() === "") {
+      newErrors.fullAddress = "Full address is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  /** Handle form submission */
+  const handleCreateEvent = async () => {
+    // Reset previous errors
+    setSubmitError("");
+
+    // Validate form
+    if (!validateForm()) {
+      setSubmitError("Please fill in all required fields correctly");
+      // Scroll to top to show errors
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const res = await CreateEventAction({
+        eventBanner: bannerFile?.url,
+        eventType: eventType,
+        eventTitle: eventTitle,
+        eventTheme: eventTheme,
+        supportingText: supportingText,
+        startDate: startDateTime,
+        endDate: endDateTime,
+        venue: venue,
+        address: fullAddress,
+        brandColor: {
+          primaryColor: primaryColor,
+          secondaryColor: secondaryColor,
+        },
+        eventVisibility: eventVisibility,
+      });
+
+      if (!res.success) {
+        setSubmitError(res.message || "Failed to create event");
+        console.log("message==", res.message);
+        return;
+      }
+
+      console.log("res==", res);
+      router.push(`?id=${res?.data._id}`);
+      setStep(step + 1);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "An unexpected error occurred";
+      setSubmitError(errorMessage);
+      console.error("Error creating event:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /** Clear specific field error when user starts typing */
+  const handleFieldChange = <K extends keyof ValidationErrors>(
+  field: K,
+  value: any
+) => {
+  // Type assertion to match store's setField signature
+  setField(field as Parameters<typeof setField>[0], value);
+  // Clear the error for this field
+  setErrors(prev => ({ ...prev, [field]: undefined }));
+};
 
   return (
     <div className="text-white">
-      {/* EVENT DETAILS Section */}
       <h2 className="text-lg sm:text-xl font-semibold mb-6">EVENT DETAILS</h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-        {/* Left Column */}
+      {/* Global Error Message */}
+      {submitError && (
+        <div className="mb-6 p-4 bg-red-500/10 border border-red-500 rounded-lg">
+          <p className="text-red-500 text-sm">{submitError}</p>
+        </div>
+      )}
+
+      {/* DETAILS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-6">
           {/* Event Type */}
           <div>
@@ -54,17 +258,32 @@ export default function EventDetails({ step, setStep }: StepProps) {
             <div className="relative">
               <select
                 value={eventType}
-                onChange={(e) => setEventType(e.target.value)}
-                className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm appearance-none cursor-pointer focus:outline-none focus:border-gray-600"
+                onChange={(e) => handleFieldChange("eventType", e.target.value)}
+                className={`w-full bg-transparent border rounded-lg px-4 py-3 appearance-none ${
+                  errors.eventType ? "border-red-500" : "border-[#2a2a2a]"
+                }`}
               >
-                <option value="" className="bg-gray-900">Select event type</option>
-                <option value="concert" className="bg-gray-900">Concert</option>
-                <option value="conference" className="bg-gray-900">Conference</option>
-                <option value="workshop" className="bg-gray-900">Workshop</option>
-                <option value="festival" className="bg-gray-900">Festival</option>
+                <option className="text-black" value="">
+                  Select event type
+                </option>
+                <option className="text-black" value="concert">
+                  Concert
+                </option>
+                <option className="text-black" value="conference">
+                  Conference
+                </option>
+                <option className="text-black" value="workshop">
+                  Workshop
+                </option>
+                <option className="text-black" value="festival">
+                  Festival
+                </option>
               </select>
               <IoChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
+            {errors.eventType && (
+              <p className="text-red-500 text-xs mt-1">{errors.eventType}</p>
+            )}
           </div>
 
           {/* Event Title */}
@@ -75,13 +294,18 @@ export default function EventDetails({ step, setStep }: StepProps) {
             <input
               type="text"
               value={eventTitle}
-              onChange={(e) => setEventTitle(e.target.value)}
-              placeholder="e.g. AfroSpook 2025"
-              className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-gray-600"
+              onChange={(e) => handleFieldChange("eventTitle", e.target.value)}
+              placeholder="Event title"
+              className={`w-full bg-transparent border rounded-lg px-4 py-3 ${
+                errors.eventTitle ? "border-red-500" : "border-[#2a2a2a]"
+              }`}
             />
+            {errors.eventTitle && (
+              <p className="text-red-500 text-xs mt-1">{errors.eventTitle}</p>
+            )}
           </div>
 
-          {/* Event Theme */}
+          {/* Theme */}
           <div>
             <label className="block text-sm mb-2">
               Event Theme <span className="text-red-500">*</span>
@@ -89,219 +313,275 @@ export default function EventDetails({ step, setStep }: StepProps) {
             <input
               type="text"
               value={eventTheme}
-              onChange={(e) => setEventTheme(e.target.value)}
-              placeholder="e.g. Dream Your Live - Live Your Dream"
-              className="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-gray-600"
+              onChange={(e) => handleFieldChange("eventTheme", e.target.value)}
+              placeholder="Event theme"
+              className={`w-full bg-transparent border rounded-lg px-4 py-3 ${
+                errors.eventTheme ? "border-red-500" : "border-[#2a2a2a]"
+              }`}
             />
+            {errors.eventTheme && (
+              <p className="text-red-500 text-xs mt-1">{errors.eventTheme}</p>
+            )}
           </div>
 
-          {/* Supporting Text */}
+          {/* Supporting */}
           <div>
             <label className="block text-sm mb-2">
               Supporting Text <span className="text-red-500">*</span>
             </label>
             <textarea
               value={supportingText}
-              onChange={(e) => setSupportingText(e.target.value)}
-              placeholder="Brief supporting text"
+              onChange={(e) =>
+                handleFieldChange("supportingText", e.target.value)
+              }
               rows={4}
               maxLength={100}
-              className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-gray-600 resize-none"
+              placeholder="Enter supporting text..."
+              className={`w-full bg-transparent border rounded-lg px-4 py-3 resize-none ${
+                errors.supportingText ? "border-red-500" : "border-[#2a2a2a]"
+              }`}
             />
-            <p className="text-xs text-gray-500 mt-1">{supportingText.length}/100</p>
+            <div className="flex justify-between items-center mt-1">
+              {errors.supportingText && (
+                <p className="text-red-500 text-xs">{errors.supportingText}</p>
+              )}
+              <p className="text-xs text-gray-500 ml-auto">
+                {supportingText.length}/100
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Right Column - Event Banner */}
         <div>
-          <label className="block text-sm mb-2">
-            Event Banner <span className="text-red-500">*</span>
-          </label>
-          <div className="border-2 border-dashed border-[#2a2a2a] rounded-lg h-64 flex flex-col items-center justify-center cursor-pointer hover:border-gray-600 transition-colors">
-            <input
-              type="file"
-              accept="image/jpeg,image/jpg,image/png"
-              onChange={handleBannerUpload}
-              className="hidden"
-              id="banner-upload"
-            />
-            <label htmlFor="banner-upload" className="cursor-pointer text-center">
-              <IoImageOutline className="text-4xl text-gray-600 mx-auto mb-3" />
-              <p className="text-sm">
-                <span className="text-[#CCA33A]">Click to upload</span> or drag and drop
-              </p>
-              <p className="text-xs text-gray-600 mt-1">JPG, JPEG, PNG less than 1MB</p>
-            </label>
-          </div>
+          <ImageUpload
+            label="Event Banner"
+            maxSize={1}
+            onUploadComplete={(image) => {
+              handleFieldChange("bannerFile", image);
+            }}
+            required
+            error={errors.bannerFile}
+          />
         </div>
       </div>
 
-      {/* Date and Time */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-6">
-        {/* Date */}
-        <div>
+      {/* DATE & TIME */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
+        {/* DATE */}
+        <div className="relative">
           <label className="block text-sm mb-2">
             Date <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
+          <div
+            onClick={() => setOpen(!open)}
+            className="relative cursor-pointer"
+          >
             <input
-              type="text"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              placeholder="12 May - 13 May, 2025"
-              className="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-gray-600"
+              readOnly
+              value={formattedDate}
+              placeholder="Select date or range"
+              className={`w-full bg-transparent border rounded-lg px-4 py-3 cursor-pointer ${
+                errors.date ? "border-red-500" : "border-[#2a2a2a]"
+              }`}
             />
             <IoCalendarOutline className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
+          {errors.date && (
+            <p className="text-red-500 text-xs mt-1">{errors.date}</p>
+          )}
+
+          {open && (
+            <div className="absolute z-20 mt-2 bg-[#151515] border border-gray-800 rounded-lg p-3">
+              <DayPicker
+                mode="range"
+                selected={range}
+                onSelect={handleDateSelect}
+                numberOfMonths={2}
+              />
+            </div>
+          )}
         </div>
 
-        {/* Start Time */}
+        {/* START TIME */}
         <div>
           <label className="block text-sm mb-2">
             Start time <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              placeholder="4:00 PM"
-              className="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-gray-600"
-            />
-            <IoTimeOutline className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          </div>
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => {
+              setStartTime(e.target.value);
+              setErrors(prev => ({ ...prev, startTime: undefined }));
+              if (range?.from && endTime) {
+                setDateTime(
+                  buildDateTime(range.from, e.target.value),
+                  buildDateTime(range.to ?? range.from, endTime)
+                );
+              }
+            }}
+            className={`w-full bg-transparent border rounded-lg px-4 py-3 ${
+              errors.startTime ? "border-red-500" : "border-[#2a2a2a]"
+            }`}
+          />
+          {errors.startTime && (
+            <p className="text-red-500 text-xs mt-1">{errors.startTime}</p>
+          )}
         </div>
 
-        {/* End Time */}
+        {/* END TIME */}
         <div>
           <label className="block text-sm mb-2">
             End time <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              placeholder="10:00 PM"
-              className="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-gray-600"
-            />
-            <IoTimeOutline className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          </div>
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => {
+              setEndTime(e.target.value);
+              setErrors(prev => ({ ...prev, endTime: undefined }));
+              if (range?.from && startTime) {
+                setDateTime(
+                  buildDateTime(range.from, startTime),
+                  buildDateTime(range.to ?? range.from, e.target.value)
+                );
+              }
+            }}
+            className={`w-full bg-transparent border rounded-lg px-4 py-3 ${
+              errors.endTime ? "border-red-500" : "border-[#2a2a2a]"
+            }`}
+          />
+          {errors.endTime && (
+            <p className="text-red-500 text-xs mt-1">{errors.endTime}</p>
+          )}
         </div>
       </div>
 
-      {/* Venue and Address */}
+      {/* VENUE */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {/* Venue */}
         <div>
           <label className="block text-sm mb-2">
             Venue <span className="text-red-500">*</span>
           </label>
           <input
-            type="text"
             value={venue}
-            onChange={(e) => setVenue(e.target.value)}
-            placeholder="e.g., The Warehouse, Berlin"
-            className="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-gray-600"
+            onChange={(e) => handleFieldChange("venue", e.target.value)}
+            placeholder="Venue"
+            className={`w-full bg-transparent border rounded-lg px-4 py-3 ${
+              errors.venue ? "border-red-500" : "border-[#2a2a2a]"
+            }`}
           />
+          {errors.venue && (
+            <p className="text-red-500 text-xs mt-1">{errors.venue}</p>
+          )}
         </div>
 
-        {/* Full Address */}
         <div>
-          <label className="block text-sm mb-2">Full Address</label>
+          <label className="block text-sm mb-2">
+            Full Address <span className="text-red-500">*</span>
+          </label>
           <input
-            type="text"
             value={fullAddress}
-            onChange={(e) => setFullAddress(e.target.value)}
-            placeholder="Street address, city, postal code, country"
-            className="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-gray-600"
+            onChange={(e) => handleFieldChange("fullAddress", e.target.value)}
+            placeholder="Full address"
+            className={`w-full bg-transparent border rounded-lg px-4 py-3 ${
+              errors.fullAddress ? "border-red-500" : "border-[#2a2a2a]"
+            }`}
           />
+          {errors.fullAddress && (
+            <p className="text-red-500 text-xs mt-1">{errors.fullAddress}</p>
+          )}
         </div>
       </div>
 
-      {/* BRAND COLOR Section */}
-      <h2 className="text-lg sm:text-xl font-semibold mt-10 mb-6">BRAND COLOR</h2>
+      {/* BRAND COLOR */}
+      <h2 className="text-lg font-semibold mt-10 mb-6">BRAND COLOR</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {/* Primary Color */}
         <div>
-          <label className="block text-sm mb-2">
-            Primary <span className="text-red-500">*</span>
-          </label>
+          <label className="block text-sm mb-2">Primary Color</label>
           <div className="flex gap-3">
-            <div className="relative">
-              <input
-                type="color"
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
-                className="w-12 h-12 rounded-lg cursor-pointer border-0 outline-none"
-                style={{ backgroundColor: primaryColor }}
-              />
-            </div>
             <input
-              type="text"
+              type="color"
               value={primaryColor}
-              onChange={(e) => setPrimaryColor(e.target.value)}
-              className="flex-1 bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 uppercase"
+              onChange={(e) => setField("primaryColor", e.target.value)}
+              className="w-12 h-12 rounded-lg cursor-pointer"
+            />
+            <input
+              value={primaryColor}
+              onChange={(e) => setField("primaryColor", e.target.value)}
+              className="flex-1 bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 uppercase"
             />
           </div>
         </div>
 
-        {/* Secondary Color */}
         <div>
-          <label className="block text-sm mb-2">
-            Secondary <span className="text-red-500">*</span>
-          </label>
+          <label className="block text-sm mb-2">Secondary Color</label>
           <div className="flex gap-3">
-            <div className="relative">
-              <input
-                type="color"
-                value={secondaryColor}
-                onChange={(e) => setSecondaryColor(e.target.value)}
-                className="w-12 h-12 rounded-lg cursor-pointer border-0 outline-none"
-                style={{ backgroundColor: secondaryColor }}
-              />
-            </div>
             <input
-              type="text"
+              type="color"
               value={secondaryColor}
-              onChange={(e) => setSecondaryColor(e.target.value)}
-              className="flex-1 bg-transparent border border-gray-700 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 uppercase"
+              onChange={(e) => setField("secondaryColor", e.target.value)}
+              className="w-12 h-12 rounded-lg cursor-pointer"
+            />
+            <input
+              value={secondaryColor}
+              onChange={(e) => setField("secondaryColor", e.target.value)}
+              className="flex-1 bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 uppercase"
             />
           </div>
         </div>
       </div>
 
-      {/* Event Visibility Toggle */}
-      <div className="bg-[#151515] border border-gray-800 rounded-lg p-4 sm:p-6 mt-8 flex items-center justify-between">
+      {/* VISIBILITY */}
+      <div className="bg-[#151515] border border-gray-800 rounded-lg p-6 mt-8 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <IoEyeOffOutline className="text-xl text-gray-400" />
           <div>
             <p className="text-sm font-medium">Event Visibility</p>
-            <p className="text-xs text-gray-500 mt-0.5">Event is hidden from public view</p>
+            <p className="text-xs text-gray-500">
+              {eventVisibility ? "Event is public" : "Event is private"}
+            </p>
           </div>
         </div>
         <button
-          onClick={() => setEventVisibility(!eventVisibility)}
+          type="button"
+          onClick={() => setField("eventVisibility", !eventVisibility)}
           className={`relative w-14 h-7 rounded-full transition-colors ${
             eventVisibility ? "bg-[#CCA33A]" : "bg-gray-700"
           }`}
         >
           <span
-            className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform ${
-              eventVisibility ? "translate-x-7" : "translate-x-0"
+            className={`block w-5 h-5 bg-white rounded-full transition-transform ${
+              eventVisibility ? "translate-x-7" : "translate-x-1"
             }`}
           />
         </button>
       </div>
 
-      {/* Proceed Button */}
+      {/* NEXT */}
       <div className="flex justify-end mt-8">
-        <button onClick={() => setStep(step + 1)} className="bg-[#CCA33A] text-black font-semibold px-8 py-3 rounded-full flex items-center gap-2 hover:bg-[#b8922d] transition-colors">
-          Proceed
-          <FiArrowRight />
+        <button
+          onClick={handleCreateEvent}
+          disabled={isSubmitting}
+          className={`px-8 py-3 rounded-full flex items-center gap-2 font-semibold transition-colors ${
+            isSubmitting
+              ? "bg-gray-600 cursor-not-allowed"
+              : "bg-[#CCA33A] hover:bg-[#b8922d]"
+          } text-white`}
+        >
+          {isSubmitting ? (
+            <>
+              <Spinner size="sm" color="border-white" />
+              Creating...
+            </>
+          ) : (
+            <>
+              Proceed <FiArrowRight />
+            </>
+          )}
         </button>
       </div>
     </div>
-  )
+  );
 }

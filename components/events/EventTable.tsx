@@ -103,7 +103,7 @@ export const EventTable: React.FC<EventTableProps> = ({
           {events.map((event) => (
             <tr key={event._id} className="border-b border-gray-800/50 hover:bg-gray-900/30 transition-colors">
               <td className="p-4 text-white font-medium">{event.eventDetails.eventTitle}</td>
-              <td className="p-4">{getStatusBadge("live")}</td>
+              <td className="p-4">{getStatusBadge(getEventStatus(event))}</td>
               <td className="p-4 text-gray-300">{formatDate(event.eventDetails.endDate)}</td>
               <td className="p-4 text-gray-300">{event.eventDetails.venue}</td>
               <td className="p-4">

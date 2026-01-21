@@ -5,12 +5,20 @@ import { useState, useRef, ChangeEvent, DragEvent } from 'react';
 import { IoImageOutline, IoCloseCircle } from 'react-icons/io5';
 import Image from 'next/image';
 import { uploadImage } from '@/app/actions/upload';
+import Spinner from './Spinner';
 
 interface ImageUploadProps {
   label: string;
   required?: boolean;
   accept?: string;
   maxSize?: number; // in MB
+  onUploadComplete?: (imageData: {
+    url: string;
+    // publicId: string;
+    // format: string;
+    // width: number;
+    // height: number;
+  }) => void;
   error?: string;
   helperText?: string;
   className?: string;
@@ -21,8 +29,8 @@ export default function ImageUpload({
   label,
   required = false,
   accept = 'image/jpeg,image/jpg,image/png',
-  maxSize = 1, // 1MB default
-//   value,
+  maxSize = 10, // 10MB default
+  onUploadComplete,
   error,
   helperText = 'JPG, JPEG, PNG',
   className = '',
@@ -30,6 +38,8 @@ export default function ImageUpload({
 }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle file selection
@@ -41,10 +51,10 @@ export default function ImageUpload({
   };
 
   // Process and validate file
-  const processFile = async(file: File) => {
+  const processFile = async (file: File) => {
     // Validate file size
     if (file.size > maxSize * 1024 * 1024) {
-      alert(`File size must be less than ${maxSize}MB`);
+      setUploadError(`File size must be less than ${maxSize}MB`);
       return;
     }
 
@@ -59,7 +69,7 @@ export default function ImageUpload({
     });
 
     if (!isValidType) {
-      alert(`Please upload a valid file type: ${helperText}`);
+      setUploadError(`Please upload a valid file type: ${helperText}`);
       return;
     }
 
@@ -70,17 +80,37 @@ export default function ImageUpload({
     };
     reader.readAsDataURL(file);
 
-    // Pass file to parent
-    const res = await uploadImage(file);
-    console.log("image===", res);
-    
+    // Upload to server
+    setIsUploading(true);
+    setUploadError('');
+
+    try {
+      const res = await uploadImage(file);
+      console.log("image===", res);
+
+      if (res.success && res.data) {
+        onUploadComplete?.(res.data);
+      } else {
+        setUploadError(res.message || 'Upload failed');
+        setPreview(null);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Upload failed. Please try again.';
+      setUploadError(errorMessage);
+      setPreview(null);
+      console.error('Upload error:', err);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // Handle drag events
   const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(true);
+    if (!isUploading) {
+      setIsDragging(true);
+    }
   };
 
   const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
@@ -99,6 +129,8 @@ export default function ImageUpload({
     e.stopPropagation();
     setIsDragging(false);
 
+    if (isUploading) return;
+
     const file = e.dataTransfer.files?.[0];
     if (file) {
       processFile(file);
@@ -108,6 +140,7 @@ export default function ImageUpload({
   // Remove image
   const handleRemove = () => {
     setPreview(null);
+    setUploadError('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -115,7 +148,9 @@ export default function ImageUpload({
 
   // Trigger file input click
   const handleClick = () => {
-    fileInputRef.current?.click();
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
   };
 
   return (
@@ -125,7 +160,7 @@ export default function ImageUpload({
       </label>
 
       <div
-        onClick={!preview ? handleClick : undefined}
+        onClick={!preview && !isUploading ? handleClick : undefined}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -133,9 +168,11 @@ export default function ImageUpload({
         className={`
           border-2 border-dashed rounded-lg h-64 flex items-center justify-center
           transition-all duration-200 relative overflow-hidden
-          ${preview ? 'border-gray-700' : 'border-[#2a2a2a] cursor-pointer hover:border-gray-600'}
+          ${preview && !isUploading ? 'border-gray-700' : 'border-[#2a2a2a]'}
+          ${!preview && !isUploading ? 'cursor-pointer hover:border-gray-600' : ''}
           ${isDragging ? 'border-[#CCA33A] bg-[#CCA33A]/5' : ''}
-          ${error ? 'border-red-500' : ''}
+          ${error || uploadError ? 'border-red-500' : ''}
+          ${isUploading ? 'pointer-events-none opacity-90' : ''}
           ${previewClassName}
         `}
       >
@@ -146,9 +183,17 @@ export default function ImageUpload({
           onChange={handleFileChange}
           className="hidden"
           id={`image-upload-${label.replace(/\s+/g, '-')}`}
+          disabled={isUploading}
         />
 
-        {preview ? (
+        {isUploading ? (
+          // Loading State
+          <div className="flex flex-col items-center justify-center">
+            <Spinner size="lg" />
+            <p className="text-sm text-gray-600 mt-4">Uploading image...</p>
+            <p className="text-xs text-gray-500 mt-1">Please wait</p>
+          </div>
+        ) : preview ? (
           // Preview Mode
           <div className="relative w-full h-full group">
             <Image
@@ -199,8 +244,8 @@ export default function ImageUpload({
         )}
       </div>
 
-      {error && (
-        <p className="text-red-500 text-xs mt-1">{error}</p>
+      {(error || uploadError) && (
+        <p className="text-red-500 text-xs mt-1">{error || uploadError}</p>
       )}
     </div>
   );

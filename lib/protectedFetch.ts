@@ -14,9 +14,9 @@ export async function protectedFetch<T>(
   return fetcher<T>(url, {
     ...options,
     headers: {
+      ...options?.headers,
       Authorization: `Bearer ${token}`,
     },
   });
 }
-
 

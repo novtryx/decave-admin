@@ -7,56 +7,47 @@ type FetchOptions = {
   timeout?: number;
 };
 
+
 export async function fetcher<T>(
   url: string,
   options: FetchOptions = {}
 ): Promise<T> {
-  const { timeout = 30000, ...fetchOptions } = options;
+  const { timeout = 30000, body, headers, ...rest } = options;
 
-  // Validate BASE_URL
   if (!BASE_URL) {
     throw new Error("API_URL environment variable is not set");
   }
 
   const fullUrl = `${BASE_URL}${url}`;
-  console.log('📡 Fetching:', fullUrl); // Debug log
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  const isFormData = body instanceof FormData;
 
   try {
-    // Create abort controller for timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
     const res = await fetch(fullUrl, {
-      method: fetchOptions.method ?? "GET",
+      ...rest,
       headers: {
-        "Content-Type": "application/json",
-        ...fetchOptions.headers,
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...headers,
       },
-      body: fetchOptions.body ? JSON.stringify(fetchOptions.body) : undefined,
+      body: isFormData ? body : body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
 
     if (!res.ok) {
-      const errorText = await res.text().catch(() => 'No error message');
+      const errorText = await res.text();
       throw new Error(`Request failed: ${res.status} - ${errorText}`);
     }
 
     return res.json();
-  } catch (error) {
-    if (error instanceof Error) {
-      // Timeout error
-      if (error.name === 'AbortError') {
-        throw new Error(`Request timeout after ${timeout}ms - Server not responding`);
-      }
-      
-      // Connection error
-      if (error.message.includes('fetch failed')) {
-        throw new Error(`Cannot connect to API at ${BASE_URL} - Is the server running?`);
-      }
+  } catch (error: any) {
+    if (error.name === "AbortError") {
+      throw new Error(`Request timeout after ${timeout}ms`);
     }
-    
     throw error;
   }
 }

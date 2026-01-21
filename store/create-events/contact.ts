@@ -1,3 +1,4 @@
+// 4. Contact Store
 import { create } from "zustand";
 
 interface ContactState {
@@ -6,20 +7,24 @@ interface ContactState {
   lostFound: string;
   supportingInfo: string;
 
-  // actions
   setField: <K extends keyof ContactState>(
     key: K,
     value: ContactState[K]
   ) => void;
 
+  initializeContact: (initialData?: Partial<ContactState>) => void;
   resetContact: () => void;
 }
 
-export const useContactStore = create<ContactState>((set) => ({
+const defaultContactState = {
   security: "",
   medical: "",
   lostFound: "",
   supportingInfo: "",
+};
+
+export const useContactStore = create<ContactState>((set) => ({
+  ...defaultContactState,
 
   setField: (key, value) =>
     set((state) => ({
@@ -27,11 +32,11 @@ export const useContactStore = create<ContactState>((set) => ({
       [key]: value,
     })),
 
-  resetContact: () =>
+  initializeContact: (initialData) =>
     set({
-      security: "",
-      medical: "",
-      lostFound: "",
-      supportingInfo: "",
+      ...defaultContactState,
+      ...initialData,
     }),
+
+  resetContact: () => set(defaultContactState),
 }));

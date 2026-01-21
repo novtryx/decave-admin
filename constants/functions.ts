@@ -30,7 +30,7 @@ export const getEventStatus = (event: Event): EventStatus => {
   const eventEndDate = new Date(event.eventDetails.endDate);
 
   // Check if event is in draft mode
-  if (event.stage < 5 || !event.published) {
+  if (!event.published) {
     return "draft";
   }
 

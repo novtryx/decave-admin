@@ -12,7 +12,7 @@ interface EventState {
   supportingText: string;
 
   // Date & Time
-startDateTime: Date | null;
+  startDateTime: Date | null;
   endDateTime: Date | null;
 
   setDateTime: (start: Date, end: Date) => void;
@@ -37,34 +37,34 @@ startDateTime: Date | null;
     value: EventState[K]
   ) => void;
 
+  initializeEvent: (initialData?: Partial<EventState>) => void;
   resetEvent: () => void;
 }
 
-export const useEventStore = create<EventState>((set) => ({
-  // Initial State
+const defaultState = {
   eventType: "",
   eventTitle: "",
   eventTheme: "",
   supportingText: "",
-
   startDateTime: null,
-endDateTime: null,
-
-setDateTime: (start, end) =>
-  set({
-    startDateTime: start,
-    endDateTime: end,
-  }),
-
+  endDateTime: null,
   venue: "",
   fullAddress: "",
-
   primaryColor: "#CCA33A",
   secondaryColor: "#001D3D",
-
   eventVisibility: false,
-
   bannerFile: null,
+};
+
+export const useEventStore = create<EventState>((set) => ({
+  // Initial State
+  ...defaultState,
+
+  setDateTime: (start, end) =>
+    set({
+      startDateTime: start,
+      endDateTime: end,
+    }),
 
   // Generic setter
   setField: (key, value) =>
@@ -73,21 +73,13 @@ setDateTime: (start, end) =>
       [key]: value,
     })),
 
-  // Reset (optional)
-  resetEvent: () =>
+  // Initialize with optional data
+  initializeEvent: (initialData) =>
     set({
-      eventType: "",
-      eventTitle: "",
-      eventTheme: "",
-      supportingText: "",
-      startDateTime: null,
-      endDateTime: null,
-    
-      venue: "",
-      fullAddress: "",
-      primaryColor: "#CCA33A",
-      secondaryColor: "#001D3D",
-      eventVisibility: false,
-      bannerFile: null,
+      ...defaultState,
+      ...initialData,
     }),
+
+  // Reset
+  resetEvent: () => set(defaultState),
 }));

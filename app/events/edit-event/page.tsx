@@ -6,11 +6,11 @@ import { FaArrowLeftLong } from "react-icons/fa6";
 import { motion, AnimatePresence } from "framer-motion"
 
 import { LuSave } from "react-icons/lu";
-import EventDetails from "./EventDetails";
-import AboutEvent from "./AboutEvent";
-import Tickets from "./Tickets";
-import Contact from "./Contact";
-import Lineup from "./Lineup";
+import EventDetails from "../create-event/EventDetails";
+import AboutEvent from "../create-event/AboutEvent";
+import Tickets from "../create-event/Tickets";
+import Contact from "../create-event/Contact";
+import Lineup from "../create-event/Lineup";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSingleEventStore } from "@/store/events/SingleEvent";
 import { useLoadingStore } from "@/store/LoadingState";
@@ -54,10 +54,14 @@ export default function CreateEvent() {
 
  useEffect(() => {
   if(eventId){
-    startLoading()
 
     fetchEvent(eventId);
 
+  }
+
+  if(isLoading){
+    startLoading()
+  }else{
     stopLoading()
   }
   }, [eventId, step]);

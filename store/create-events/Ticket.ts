@@ -1,6 +1,5 @@
+// 2. Ticket Store
 import { create } from "zustand";
-
-/* ================= TYPES ================= */
 
 export interface Benefit {
   id: number;
@@ -22,7 +21,6 @@ export interface Ticket {
 interface TicketStore {
   tickets: Ticket[];
 
-  // ticket actions
   addTicket: () => void;
   deleteTicket: (id: number) => void;
   updateTicket: <K extends keyof Ticket>(
@@ -31,22 +29,15 @@ interface TicketStore {
     value: Ticket[K]
   ) => void;
   toggleExpand: (id: number) => void;
-
-  // benefit actions
   addBenefit: (ticketId: number) => void;
   deleteBenefit: (ticketId: number, benefitId: number) => void;
-  updateBenefit: (
-    ticketId: number,
-    benefitId: number,
-    text: string
-  ) => void;
-
+  updateBenefit: (ticketId: number, benefitId: number, text: string) => void;
+  
+  initializeTickets: (initialTickets?: Ticket[]) => void;
   resetTickets: () => void;
 }
 
-/* ================= STORE ================= */
-
-export const useTicketStore = create<TicketStore>((set) => ({
+const defaultTicketState = {
   tickets: [
     {
       id: 1,
@@ -56,10 +47,14 @@ export const useTicketStore = create<TicketStore>((set) => ({
       salesDate: "01/02/2026 - 12/02/2026",
       benefits: [{ id: 1, text: "" }],
       isExpanded: false,
-      status: "Active",
+      status: "Active" as const,
       soldCount: 0,
     },
   ],
+};
+
+export const useTicketStore = create<TicketStore>((set) => ({
+  ...defaultTicketState,
 
   addTicket: () =>
     set((state) => ({
@@ -136,8 +131,13 @@ export const useTicketStore = create<TicketStore>((set) => ({
       ),
     })),
 
-  resetTickets: () =>
+  initializeTickets: (initialTickets) =>
     set({
-      tickets: [],
+      tickets:
+        initialTickets && initialTickets.length > 0
+          ? initialTickets
+          : defaultTicketState.tickets,
     }),
+
+  resetTickets: () => set(defaultTicketState),
 }));

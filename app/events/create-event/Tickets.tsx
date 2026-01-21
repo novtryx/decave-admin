@@ -1,10 +1,12 @@
 import { IoAddOutline, IoTrashOutline, IoChevronDown, IoPencilOutline } from "react-icons/io5"
 import { IoArrowBack, IoArrowForward } from "react-icons/io5"
 import { useTicketStore } from "@/store/create-events/Ticket";
+import { useSingleEventStore } from "@/store/events/SingleEvent";
+import { useLoadingStore } from "@/store/LoadingState";
 import { useSearchParams } from "next/navigation";
 import { EditEventAction } from "@/app/actions/event";
 import Spinner from "@/components/Spinner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface StepProps {
   step: number;
@@ -37,11 +39,43 @@ export default function Tickets({ step, setStep }: StepProps) {
     addBenefit,
     deleteBenefit,
     updateBenefit,
+    initializeTickets,
   } = useTicketStore()
+
+  const { event } = useSingleEventStore();
+  const { startLoading, stopLoading } = useLoadingStore();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [submitError, setSubmitError] = useState<string>("");
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  /** Initialize form with event data if available */
+  useEffect(() => {
+    if (event?.tickets && event.tickets.length > 0 && !isInitialized && eventId) {
+      console.log("Initializing Tickets with:", event.tickets);
+      
+      const initialTickets = event.tickets.map((ticket, index) => ({
+        id: Date.now() + index,
+        ticketName: ticket.ticketName || "",
+        price: ticket.price?.toString() || "",
+        quantity: ticket.availableQuantity?.toString() || ticket.initialQuantity?.toString() || "",
+        salesDate: "", // You can add this field if available in your backend
+        benefits: ticket.benefits?.length > 0
+          ? ticket.benefits.map((benefit, benefitIndex) => ({
+              id: Date.now() + index * 1000 + benefitIndex,
+              text: benefit || "",
+            }))
+          : [{ id: Date.now() + index * 1000, text: "" }],
+        isExpanded: false,
+        status: "Active" as const,
+        soldCount: (ticket.initialQuantity || 0) - (ticket.availableQuantity || 0),
+      }));
+
+      initializeTickets(initialTickets);
+      setIsInitialized(true);
+    }
+  }, [event, initializeTickets, isInitialized, eventId]);
 
   /** Validate all required fields */
   const validateForm = (): boolean => {
@@ -118,6 +152,7 @@ export default function Tickets({ step, setStep }: StepProps) {
 
   /** Handle form submission */
   const handleSaveTicket = async () => {
+    startLoading();
     // Reset previous errors
     setSubmitError("");
 
@@ -126,6 +161,14 @@ export default function Tickets({ step, setStep }: StepProps) {
       setSubmitError("Please fill in all required fields correctly");
       // Scroll to top to show errors
       window.scrollTo({ top: 0, behavior: "smooth" });
+      stopLoading();
+      return;
+    }
+
+    // Check if eventId exists
+    if (!eventId.trim()) {
+      setSubmitError("Event ID not found. Please start from the beginning.");
+      stopLoading();
       return;
     }
 
@@ -135,8 +178,8 @@ export default function Tickets({ step, setStep }: StepProps) {
       const data = {
         stage: step,
         tickets: tickets.map((ticket) => ({
-          ticketName: ticket.ticketName,
-          price: ticket.price,
+          ticketName: ticket.ticketName.trim(),
+          price: Number(ticket.price),
           currency: "NGN",
           initialQuantity: Number(ticket.quantity),
           availableQuantity: Number(ticket.quantity),
@@ -145,6 +188,8 @@ export default function Tickets({ step, setStep }: StepProps) {
             .filter((text) => text !== ""), // Filter out empty benefits
         })),
       };
+
+      console.log("Saving tickets data:", data); // Debug log
 
       const res = await EditEventAction(data, eventId);
 
@@ -162,6 +207,7 @@ export default function Tickets({ step, setStep }: StepProps) {
       console.error("Error saving tickets:", error);
     } finally {
       setIsSubmitting(false);
+      stopLoading();
     }
   };
 
@@ -570,7 +616,7 @@ export default function Tickets({ step, setStep }: StepProps) {
         >
           {isSubmitting ? (
             <>
-              <Spinner size="sm" color="border-black" />
+              <Spinner size="sm" color="border-white" />
               Saving...
             </>
           ) : (

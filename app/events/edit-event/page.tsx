@@ -1,7 +1,7 @@
 "use client"
 
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { FaArrowLeftLong } from "react-icons/fa6";
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -15,14 +15,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSingleEventStore } from "@/store/events/SingleEvent";
 import { useLoadingStore } from "@/store/LoadingState";
 
-export default function CreateEvent() {
+function CreateEventContent() {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams.get('id') ?? "";
-    const { event, isLoading, error, fetchEvent, clearError } = useSingleEventStore();
-    const {startLoading, stopLoading} = useLoadingStore()
+  const { event, isLoading, error, fetchEvent, clearError } = useSingleEventStore();
+  const {startLoading, stopLoading} = useLoadingStore()
 
   const tabs = [
     { id: 1, name: "Event Details", component: <EventDetails step={step} setStep={setStep} /> },
@@ -52,19 +52,17 @@ export default function CreateEvent() {
     setStep(id)
   }
 
- useEffect(() => {
-  if(eventId){
+  useEffect(() => {
+    if(eventId){
+      fetchEvent(eventId);
+    }
 
-    fetchEvent(eventId);
-
-  }
-
-  if(isLoading){
-    startLoading()
-  }else{
-    stopLoading()
-  }
-  }, [eventId, step]);
+    if(isLoading){
+      startLoading()
+    }else{
+      stopLoading()
+    }
+  }, [eventId, isLoading, fetchEvent, startLoading, stopLoading]);
   
 
   return (
@@ -127,5 +125,13 @@ export default function CreateEvent() {
         </AnimatePresence>
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function CreateEvent() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateEventContent />
+    </Suspense>
   )
 }

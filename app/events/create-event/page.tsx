@@ -1,7 +1,7 @@
 "use client"
 
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { FaArrowLeftLong } from "react-icons/fa6";
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -15,14 +15,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSingleEventStore } from "@/store/events/SingleEvent";
 import { useLoadingStore } from "@/store/LoadingState";
 
-export default function CreateEvent() {
+function CreateEventContent() {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams.get('id') ?? "";
-    const { event, isLoading, error, fetchEvent, clearError } = useSingleEventStore();
-    const {startLoading, stopLoading} = useLoadingStore()
+  const { event, isLoading, error, fetchEvent, clearError } = useSingleEventStore();
+  const {startLoading, stopLoading} = useLoadingStore()
 
   const tabs = [
     { id: 1, name: "Event Details", component: <EventDetails step={step} setStep={setStep} /> },
@@ -52,15 +52,14 @@ export default function CreateEvent() {
     setStep(id)
   }
 
- useEffect(() => {
-  if(eventId){
-    startLoading()
-
-    fetchEvent(eventId);
-
-    stopLoading()
-  }
-  }, [eventId, step]);
+  useEffect(() => {
+    if(eventId){
+      startLoading()
+      fetchEvent(eventId).finally(() => {
+        stopLoading()
+      });
+    }
+  }, [eventId]);
   
 
   return (
@@ -80,10 +79,7 @@ export default function CreateEvent() {
 
         {/* Buttons */}
         <div className="flex items-center gap-3 sm:gap-4">
-          {/* <button className="border-2 cursor-pointer flex items-center gap-2 text-[#cca33a] border-[#cca33a] rounded-full py-2 px-4 sm:px-6 text-sm sm:text-base">
-            <LuSave />
-            Save Later
-          </button> */}
+         
           <button onClick={() => router.back()} className="text-white hover:bg-gray-600 rounded-full py-2 px-6 w-full lg:w-fit font-semibold cursor-pointer text-sm sm:text-base">Cancel</button>
         </div>
       </section>
@@ -123,5 +119,13 @@ export default function CreateEvent() {
         </AnimatePresence>
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function CreateEvent() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateEventContent />
+    </Suspense>
   )
 }

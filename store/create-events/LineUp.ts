@@ -1,9 +1,9 @@
+// 3. Lineup Store
 import { create } from "zustand";
 
-/* ================= TYPES ================= */
 export interface Artist {
   id: number;
-  imageUrl: string | null; // Changed from `image: File | null`
+  imageUrl: string | null;
   name: string;
   role: string;
   isHeadliner: boolean;
@@ -14,7 +14,7 @@ export interface Artist {
 
 interface LineupStore {
   artists: Artist[];
-  // actions
+  
   addArtist: () => void;
   clearAll: () => void;
   updateArtist: <K extends keyof Artist>(
@@ -23,13 +23,14 @@ interface LineupStore {
     value: Artist[K]
   ) => void;
   toggleHeadliner: (id: number) => void;
+  
+  initializeLineup: (initialArtists?: Artist[]) => void;
   resetLineup: () => void;
 }
 
-/* ================= INITIAL ARTIST ================= */
 const initialArtist = (): Artist => ({
   id: Date.now(),
-  imageUrl: null, // Changed from `image: null`
+  imageUrl: null,
   name: "",
   role: "",
   isHeadliner: true,
@@ -38,9 +39,12 @@ const initialArtist = (): Artist => ({
   website: "",
 });
 
-/* ================= STORE ================= */
-export const useLineupStore = create<LineupStore>((set) => ({
+const defaultLineupState = {
   artists: [initialArtist()],
+};
+
+export const useLineupStore = create<LineupStore>((set) => ({
+  ...defaultLineupState,
   
   addArtist: () =>
     set((state) => ({
@@ -48,7 +52,7 @@ export const useLineupStore = create<LineupStore>((set) => ({
         ...state.artists,
         {
           id: Date.now(),
-          imageUrl: null, // Changed from `image: null`
+          imageUrl: null,
           name: "",
           role: "",
           isHeadliner: false,
@@ -79,6 +83,14 @@ export const useLineupStore = create<LineupStore>((set) => ({
           : artist
       ),
     })),
+
+  initializeLineup: (initialArtists) =>
+    set({
+      artists:
+        initialArtists && initialArtists.length > 0
+          ? initialArtists
+          : [initialArtist()],
+    }),
     
   resetLineup: () =>
     set({

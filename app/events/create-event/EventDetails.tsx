@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   IoChevronDown,
   IoCalendarOutline,
@@ -14,9 +14,12 @@ import "react-day-picker/dist/style.css";
 
 import ImageUpload from "@/components/Image";
 import { useEventStore } from "@/store/create-events/EventDetails";
-import { CreateEventAction } from "@/app/actions/event";
-import { useRouter } from "next/navigation";
+import { CreateEventAction, EditEventAction } from "@/app/actions/event";
+import { useRouter, useSearchParams } from "next/navigation";
 import Spinner from "@/components/Spinner";
+import { Event } from "@/types/eventsType";
+import { useSingleEventStore } from "@/store/events/SingleEvent";
+import { useLoadingStore } from "@/store/LoadingState";
 
 interface StepProps {
   step: number;
@@ -52,6 +55,7 @@ export default function EventDetails({ step, setStep }: StepProps) {
     bannerFile,
     setField,
     setDateTime,
+    initializeEvent,
   } = useEventStore();
 
   /** Local state */
@@ -62,8 +66,48 @@ export default function EventDetails({ step, setStep }: StepProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [submitError, setSubmitError] = useState<string>("");
-  
+  const [isInitialized, setIsInitialized] = useState(false);
+  const searchParams = useSearchParams();
+  const eventId = searchParams.get('id') ?? "";
   const router = useRouter();
+  const { event } = useSingleEventStore();
+  const {startLoading, stopLoading} = useLoadingStore()
+  
+  /** Initialize form with event data if available */
+      
+  
+  useEffect(() => {
+    if (event && !isInitialized) {
+      // Initialize the event store
+      initializeEvent({
+        eventType: event.eventDetails.eventType,
+        eventTitle: event.eventDetails.eventTitle,
+        eventTheme: event.eventDetails.eventTheme,
+        supportingText: event.eventDetails.supportingText,
+        startDateTime: new Date(event.eventDetails.startDate),
+        endDateTime: new Date(event.eventDetails.endDate),
+        venue: event.eventDetails.venue,
+        fullAddress: event.eventDetails.address || "",
+        primaryColor: event.eventDetails.brandColor.primaryColor,
+        secondaryColor: event.eventDetails.brandColor.secondaryColor,
+        eventVisibility: event.eventDetails.eventVisibility,
+        bannerFile: event.eventDetails.eventBanner 
+          ? { url: event.eventDetails.eventBanner } 
+          : null,
+      });
+
+      // Set local date range
+      const start = new Date(event.eventDetails.startDate);
+      const end = new Date(event.eventDetails.endDate);
+      setRange({ from: start, to: end });
+
+      // Set local time
+      setStartTime(format(start, "HH:mm"));
+      setEndTime(format(end, "HH:mm"));
+
+      setIsInitialized(true);
+    }
+  }, [event, initializeEvent, isInitialized]);
 
   /** Combine date + time → MongoDB Date */
   const buildDateTime = (date: Date, time: string) => {
@@ -175,6 +219,7 @@ export default function EventDetails({ step, setStep }: StepProps) {
 
   /** Handle form submission */
   const handleCreateEvent = async () => {
+    startLoading()
     // Reset previous errors
     setSubmitError("");
 
@@ -189,7 +234,30 @@ export default function EventDetails({ step, setStep }: StepProps) {
     setIsSubmitting(true);
 
     try {
-      const res = await CreateEventAction({
+      let res;
+      if(eventId.trim()){
+       const data= {
+          stage: step,
+          eventDetails:{
+            eventBanner: bannerFile?.url,
+        eventType: eventType,
+        eventTitle: eventTitle,
+        eventTheme: eventTheme,
+        supportingText: supportingText,
+        startDate: startDateTime,
+        endDate: endDateTime,
+        venue: venue,
+        address: fullAddress,
+        brandColor: {
+          primaryColor: primaryColor,
+          secondaryColor: secondaryColor,
+        },
+        eventVisibility: eventVisibility,
+          }
+        }
+        res = await EditEventAction(data, eventId)
+      }else{
+        res = await CreateEventAction({
         eventBanner: bannerFile?.url,
         eventType: eventType,
         eventTitle: eventTitle,
@@ -205,15 +273,18 @@ export default function EventDetails({ step, setStep }: StepProps) {
         },
         eventVisibility: eventVisibility,
       });
+      }
 
-      if (!res.success) {
-        setSubmitError(res.message || "Failed to create event");
-        console.log("message==", res.message);
+      
+
+      if (!res?.success) {
+        setSubmitError(res?.message || "Failed to create event");
+        console.log("message==", res?.message);
         return;
       }
 
       console.log("res==", res);
-      router.push(`?id=${res?.data._id}`);
+      router.push(`?id=${res?.data?._id}`);
       setStep(step + 1);
     } catch (error) {
       const errorMessage =
@@ -222,19 +293,22 @@ export default function EventDetails({ step, setStep }: StepProps) {
       console.error("Error creating event:", error);
     } finally {
       setIsSubmitting(false);
+      stopLoading()
     }
   };
 
   /** Clear specific field error when user starts typing */
   const handleFieldChange = <K extends keyof ValidationErrors>(
-  field: K,
-  value: any
-) => {
-  // Type assertion to match store's setField signature
-  setField(field as Parameters<typeof setField>[0], value);
-  // Clear the error for this field
-  setErrors(prev => ({ ...prev, [field]: undefined }));
-};
+    field: K,
+    value: any
+  ) => {
+    // Type assertion to match store's setField signature
+    setField(field as Parameters<typeof setField>[0], value);
+    // Clear the error for this field
+    setErrors(prev => ({ ...prev, [field]: undefined }));
+  };
+
+  
 
   return (
     <div className="text-white">
@@ -355,12 +429,13 @@ export default function EventDetails({ step, setStep }: StepProps) {
         <div>
           <ImageUpload
             label="Event Banner"
-            maxSize={1}
+            
             onUploadComplete={(image) => {
               handleFieldChange("bannerFile", image);
             }}
             required
             error={errors.bannerFile}
+            initialImage={bannerFile?.url}
           />
         </div>
       </div>

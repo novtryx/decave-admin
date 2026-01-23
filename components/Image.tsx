@@ -1,7 +1,7 @@
 // components/ImageUpload.tsx
 'use client';
 
-import { useState, useRef, ChangeEvent, DragEvent } from 'react';
+import { useState, useRef, ChangeEvent, DragEvent, useEffect } from 'react';
 import { IoImageOutline, IoCloseCircle } from 'react-icons/io5';
 import Image from 'next/image';
 import { uploadImage } from '@/app/actions/upload';
@@ -14,15 +14,12 @@ interface ImageUploadProps {
   maxSize?: number; // in MB
   onUploadComplete?: (imageData: {
     url: string;
-    // publicId: string;
-    // format: string;
-    // width: number;
-    // height: number;
   }) => void;
   error?: string;
   helperText?: string;
   className?: string;
   previewClassName?: string;
+  initialImage?: string; // Add this prop
 }
 
 export default function ImageUpload({
@@ -35,12 +32,20 @@ export default function ImageUpload({
   helperText = 'JPG, JPEG, PNG',
   className = '',
   previewClassName = '',
+  initialImage, // Add this
 }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize preview with initial image if provided
+  useEffect(() => {
+    if (initialImage && !preview) {
+      setPreview(initialImage);
+    }
+  }, [initialImage, preview]);
 
   // Handle file selection
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {

@@ -6,11 +6,11 @@ import { FaArrowLeftLong } from "react-icons/fa6";
 import { motion, AnimatePresence } from "framer-motion"
 
 import { LuSave } from "react-icons/lu";
-import EventDetails from "./EventDetails";
-import AboutEvent from "./AboutEvent";
-import Tickets from "./Tickets";
-import Contact from "./Contact";
-import Lineup from "./Lineup";
+import EventDetails from "../create-event/EventDetails";
+import AboutEvent from "../create-event/AboutEvent";
+import Tickets from "../create-event/Tickets";
+import Contact from "../create-event/Contact";
+import Lineup from "../create-event/Lineup";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSingleEventStore } from "@/store/events/SingleEvent";
 import { useLoadingStore } from "@/store/LoadingState";
@@ -54,12 +54,15 @@ function CreateEventContent() {
 
   useEffect(() => {
     if(eventId){
-      startLoading()
-      fetchEvent(eventId).finally(() => {
-        stopLoading()
-      });
+      fetchEvent(eventId);
     }
-  }, [eventId]);
+
+    if(isLoading){
+      startLoading()
+    }else{
+      stopLoading()
+    }
+  }, [eventId, isLoading, fetchEvent, startLoading, stopLoading]);
   
 
   return (
@@ -79,7 +82,10 @@ function CreateEventContent() {
 
         {/* Buttons */}
         <div className="flex items-center gap-3 sm:gap-4">
-         
+          {/* <button className="border-2 cursor-pointer flex items-center gap-2 text-[#cca33a] border-[#cca33a] rounded-full py-2 px-4 sm:px-6 text-sm sm:text-base">
+            <LuSave />
+            Save Later
+          </button> */}
           <button onClick={() => router.back()} className="text-white hover:bg-gray-600 rounded-full py-2 px-6 w-full lg:w-fit font-semibold cursor-pointer text-sm sm:text-base">Cancel</button>
         </div>
       </section>

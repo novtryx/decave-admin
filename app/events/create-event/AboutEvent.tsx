@@ -2,8 +2,10 @@ import { EditEventAction } from "@/app/actions/event";
 import ImageUpload from "@/components/Image";
 import Spinner from "@/components/Spinner";
 import { useAboutEventStore } from "@/store/create-events/AboutEvent";
+import { useSingleEventStore } from "@/store/events/SingleEvent";
+import { useLoadingStore } from "@/store/LoadingState";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   IoAddOutline,
   IoArrowBack,
@@ -41,11 +43,45 @@ export default function AboutEvent({ step, setStep }: StepProps) {
     addSection,
     deleteSection,
     updateSection,
+    initializeAboutEvent,
   } = useAboutEventStore();
+
+  const { event } = useSingleEventStore();
+  const { startLoading, stopLoading } = useLoadingStore();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [submitError, setSubmitError] = useState<string>("");
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  /** Initialize form with event data if available */
+ useEffect(() => {
+   console.log("Initializing with event data:", event); // Debug log
+  if (event?.aboutEvent && !isInitialized && eventId) {
+    
+    initializeAboutEvent({
+      heading: event.aboutEvent.heading || "",
+      description: event.aboutEvent.description || "",
+      sections: event.aboutEvent.content?.length > 0
+        ? event.aboutEvent.content.map((section, index) => ({
+            id: Date.now() + index,
+            subTitle: section.subTitle || "",
+            content: section.sectionContent || "",
+            image: section.supportingImage ? { url: section.supportingImage } : null,
+          }))
+        : [
+            {
+              id: Date.now(),
+              subTitle: "",
+              content: "",
+              image: null,
+            },
+          ],
+    });
+
+    setIsInitialized(true);
+  }
+}, [event, initializeAboutEvent, isInitialized, eventId, step]);
 
   /** Validate all required fields */
   const validateForm = (): boolean => {
@@ -110,6 +146,7 @@ export default function AboutEvent({ step, setStep }: StepProps) {
 
   /** Handle form submission */
   const handleSaveAboutEvent = async () => {
+    startLoading();
     // Reset previous errors
     setSubmitError("");
 
@@ -118,6 +155,14 @@ export default function AboutEvent({ step, setStep }: StepProps) {
       setSubmitError("Please fill in all required fields correctly");
       // Scroll to top to show errors
       window.scrollTo({ top: 0, behavior: "smooth" });
+      stopLoading();
+      return;
+    }
+
+    // Check if eventId exists
+    if (!eventId.trim()) {
+      setSubmitError("Event ID not found. Please start from the beginning.");
+      stopLoading();
       return;
     }
 
@@ -126,13 +171,13 @@ export default function AboutEvent({ step, setStep }: StepProps) {
     try {
       const data = {
         stage: step,
-        addboutEvent: {
-          heading: heading,
-          description: description,
+        aboutEvent: {
+          heading: heading.trim(),
+          description: description.trim(),
           content: sections.map((section) => ({
-            subTitle: section.subTitle,
-            sectionContent: section.content,
-            supportingImage: section.image,
+            subTitle: section.subTitle.trim(),
+            sectionContent: section.content.trim(),
+            supportingImage: section.image?.url || "",
           })),
         },
       };
@@ -155,6 +200,7 @@ export default function AboutEvent({ step, setStep }: StepProps) {
       console.error("Error saving about event:", error);
     } finally {
       setIsSubmitting(false);
+      stopLoading();
     }
   };
 
@@ -354,6 +400,7 @@ export default function AboutEvent({ step, setStep }: StepProps) {
                   });
                 }}
                 error={sectionErrors.image}
+                initialImage={section.image?.url}
               />
 
               {/* Delete Button - only show if more than one section */}
@@ -417,7 +464,7 @@ export default function AboutEvent({ step, setStep }: StepProps) {
         >
           {isSubmitting ? (
             <>
-              <Spinner size="sm" color="border-black" />
+              <Spinner size="sm" color="border-white" />
               Saving...
             </>
           ) : (

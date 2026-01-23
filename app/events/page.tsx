@@ -9,11 +9,13 @@ import { FaPlus } from "react-icons/fa6";
 import { FiSearch } from "react-icons/fi";
 import { getAllEvents } from "../actions/event";
 import { Event } from "@/types/eventsType";
+import { useRouter } from "next/navigation";
 
 export default function Events() {
   const [eventData, setEventData] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
 
   useEffect(() => {
     const fetchAllEvents = async () => {
@@ -125,7 +127,7 @@ export default function Events() {
           <EventTable
             events={eventData}
             onView={(event) => console.log("View:", event)}
-            onEdit={(event) => console.log("Edit:", event)}
+            onEdit={(event) => router.push(`/events/edit-event?id=${event._id}`)}
             onCopy={(event) => console.log("Copy:", event)}
             onDelete={(event) => console.log("Delete:", event)}
           />

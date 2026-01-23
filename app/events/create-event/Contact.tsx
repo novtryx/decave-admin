@@ -1,9 +1,11 @@
 import { IoArrowBack } from "react-icons/io5"
 import { useContactStore } from "@/store/create-events/contact"; 
+import { useSingleEventStore } from "@/store/events/SingleEvent";
+import { useLoadingStore } from "@/store/LoadingState";
 import { useRouter, useSearchParams } from "next/navigation";
 import { EditEventAction } from "@/app/actions/event";
 import Spinner from "@/components/Spinner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface StepProps {
   step: number;
@@ -21,11 +23,30 @@ export default function Contact({ step, setStep }: StepProps) {
   const eventId = searchParams.get('id') ?? "";
   const router = useRouter();
   
-  const { security, medical, lostFound, supportingInfo, setField } = useContactStore();
+  const { security, medical, lostFound, supportingInfo, setField, initializeContact } = useContactStore();
+  const { event } = useSingleEventStore();
+  const { startLoading, stopLoading } = useLoadingStore();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [submitError, setSubmitError] = useState<string>("");
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  /** Initialize form with event data if available */
+  useEffect(() => {
+    if (event?.emergencyContact && !isInitialized && eventId) {
+      console.log("Initializing Contact with:", event.emergencyContact);
+      
+      initializeContact({
+        security: event.emergencyContact.security || "",
+        medical: event.emergencyContact.medical || "",
+        lostFound: event.emergencyContact.lostButFound || "",
+        supportingInfo: event.emergencyContact.supportingInfo || "",
+      });
+
+      setIsInitialized(true);
+    }
+  }, [event, initializeContact, isInitialized, eventId]);
 
   /** Phone number validation helper */
   const isValidPhoneNumber = (phone: string): boolean => {
@@ -66,6 +87,7 @@ export default function Contact({ step, setStep }: StepProps) {
 
   /** Handle form submission */
   const handlePublishEvent = async() => {
+    startLoading();
     // Reset previous errors
     setSubmitError("");
 
@@ -74,6 +96,14 @@ export default function Contact({ step, setStep }: StepProps) {
       setSubmitError("Please fill in all required fields correctly");
       // Scroll to top to show errors
       window.scrollTo({ top: 0, behavior: "smooth" });
+      stopLoading();
+      return;
+    }
+
+    // Check if eventId exists
+    if (!eventId.trim()) {
+      setSubmitError("Event ID not found. Please start from the beginning.");
+      stopLoading();
       return;
     }
 
@@ -90,6 +120,8 @@ export default function Contact({ step, setStep }: StepProps) {
         },
         published: true
       };
+
+      console.log("Publishing event with data:", data); // Debug log
 
       const res = await EditEventAction(data, eventId);
 
@@ -108,6 +140,7 @@ export default function Contact({ step, setStep }: StepProps) {
       console.error("Error publishing event:", error);
     } finally {
       setIsSubmitting(false);
+      stopLoading();
     }
   };
 

@@ -53,7 +53,7 @@ export interface Event {
         instgram: string;
         twitter:string;
         website:string;
-    }[];
+    };
   }[];
   //stage 5
   emergencyContact:{

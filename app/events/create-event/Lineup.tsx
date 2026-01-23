@@ -3,11 +3,13 @@ import { FaXTwitter } from "react-icons/fa6"
 import { IoArrowBack, IoArrowForward } from "react-icons/io5"
 import { IoTrashOutline, IoStar, IoStarOutline } from "react-icons/io5"
 import { useLineupStore } from "@/store/create-events/LineUp"
+import { useSingleEventStore } from "@/store/events/SingleEvent"
+import { useLoadingStore } from "@/store/LoadingState"
 import ImageUpload from "@/components/Image"
 import Spinner from "@/components/Spinner"
 import { EditEventAction } from "@/app/actions/event"
 import { useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 interface StepProps {
   step: number;
@@ -34,11 +36,37 @@ export default function Lineup({ step, setStep }: StepProps) {
     clearAll,
     updateArtist,
     toggleHeadliner,
+    initializeLineup,
   } = useLineupStore()
+
+  const { event } = useSingleEventStore();
+  const { startLoading, stopLoading } = useLoadingStore();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [submitError, setSubmitError] = useState<string>("");
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  /** Initialize form with event data if available */
+  useEffect(() => {
+    if (event?.artistLineUp && event.artistLineUp.length > 0 && !isInitialized && eventId) {
+      console.log("Initializing Lineup with:", event.artistLineUp);
+      
+      const initialArtists = event.artistLineUp.map((artist, index) => ({
+        id: Date.now() + index,
+        imageUrl: artist.artistImage || null,
+        name: artist.artistName || "",
+        role: artist.artistGenre || "",
+        isHeadliner: artist.headliner ?? false,
+        instagram: artist.socials?.instgram || "", // Note: typo in backend (instgram vs instagram)
+        twitter: artist.socials?.twitter || "",
+        website: artist.socials?.website || "",
+      }));
+
+      initializeLineup(initialArtists);
+      setIsInitialized(true);
+    }
+  }, [event, initializeLineup, isInitialized, eventId]);
 
   const handleImageUploadComplete = (artistId: number, imageData: { url: string }) => {
     updateArtist(artistId, 'imageUrl', imageData.url)
@@ -111,6 +139,7 @@ export default function Lineup({ step, setStep }: StepProps) {
 
   /** Handle form submission */
   const handleSaveHeadliner = async() => {
+    startLoading();
     // Reset previous errors
     setSubmitError("");
 
@@ -119,6 +148,14 @@ export default function Lineup({ step, setStep }: StepProps) {
       setSubmitError("Please fill in all required fields correctly");
       // Scroll to top to show errors
       window.scrollTo({ top: 0, behavior: "smooth" });
+      stopLoading();
+      return;
+    }
+
+    // Check if eventId exists
+    if (!eventId.trim()) {
+      setSubmitError("Event ID not found. Please start from the beginning.");
+      stopLoading();
       return;
     }
 
@@ -128,17 +165,21 @@ export default function Lineup({ step, setStep }: StepProps) {
       const data = {
         stage: step,
         artistLineUp: artists.map((artist) => ({
-          artistImage: artist.imageUrl,
-          artistName: artist.name,
-          artistGenre: artist.role,
+          artistImage: artist.imageUrl || "",
+          artistName: artist.name.trim(),
+          artistGenre: artist.role.trim(),
           headliner: artist.isHeadliner,
-          socials: {
-            instagram: artist.instagram || "",
-            twitter: artist.twitter || "",
-            website: artist.website || ""
-          }
+          socials: 
+            {
+              instgram: artist.instagram.trim() || "", // Note: backend has typo
+              twitter: artist.twitter.trim() || "",
+              website: artist.website.trim() || ""
+            }
+          
         }))
       }
+
+      console.log("Saving lineup data:", data); // Debug log
 
       const res = await EditEventAction(data, eventId);
 
@@ -156,6 +197,7 @@ export default function Lineup({ step, setStep }: StepProps) {
       console.error("Error saving lineup:", error);
     } finally {
       setIsSubmitting(false);
+      stopLoading();
     }
   }
 
@@ -217,6 +259,7 @@ export default function Lineup({ step, setStep }: StepProps) {
                 helperText="JPG, JPEG, PNG"
                 previewClassName="h-40 w-48"
                 error={artistErrors.imageUrl}
+                initialImage={artist.imageUrl || undefined}
               />
 
               {/* Artist Details */}
@@ -398,7 +441,7 @@ export default function Lineup({ step, setStep }: StepProps) {
         >
           {isSubmitting ? (
             <>
-              <Spinner size="sm" color="border-black" />
+              <Spinner size="sm" color="border-white" />
               Saving...
             </>
           ) : (

@@ -15,7 +15,8 @@ export default function Navbar() {
         w-[92%]
         max-w-7xl
         -translate-x-1/2
-        rounded-full
+        rounded-2xl
+        lg:rounded-full
         border border-white/20
         bg-transparent
         backdrop-blur-xl

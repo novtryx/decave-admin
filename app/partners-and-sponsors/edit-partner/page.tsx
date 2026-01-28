@@ -12,7 +12,7 @@ import SuccessModal from "@/components/SuccessModal"
 import { uploadImageClient } from "@/utils/upload-image"
 
 
-export default function AddPartner() {
+export default function EditPartner() {
   const [partnerName, setPartnerName] = useState("")
   const [logo, setLogo] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string>("")
@@ -142,11 +142,11 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           router.push("/dashboard/partners")
         }, 3000)
       } else {
-        setErrorMessage(response.message || "Failed to create partner")
+        setErrorMessage(response.message || "Failed to edit partner")
       }
     } catch (error) {
-      console.error('Error creating partner:', error)
-      setErrorMessage("An error occurred while creating the partner")
+      console.error('Error edit partner:', error)
+      setErrorMessage("An error occurred while editing the partner")
     } finally {
       setIsLoading(false)
     }
@@ -172,9 +172,9 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             <FaArrowLeftLong />
           </div>
           <div>
-            <h3 className="text-xl lg:text-2xl font-semibold mb-2">Add New Partner</h3>
+            <h3 className="text-xl lg:text-2xl font-semibold mb-2">Edit</h3>
             <p className="text-sm text-[#b3b3b3]">
-              Create a new sponsorship partnership
+              Configure partnership details
             </p>
           </div>
         </div>
@@ -187,14 +187,14 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             className="border-2 border-[#cca33a] w-full lg:w-fit py-2 px-6 rounded-full text-sm text-[#cca33a] flex justify-center gap-2 items-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#cca33a] hover:text-black transition-colors"
           >
             <LuSave />
-            {isLoading ? "Saving..." : "Save & Publish"}
+            {isLoading ? "Saving..." : "Save Changes"}
           </button>
           <button 
             onClick={handleCancel}
             disabled={isLoading}
-            className="hover:bg-gray-600 py-2 px-6 w-full lg:w-fit rounded-full text-sm text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="hover:bg-red-50 py-2 px-6 w-full lg:w-fit rounded-full text-sm text-red-600 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Cancel
+            End Partnership
           </button>
         </div>
       </section>

@@ -49,7 +49,7 @@ export default function OtpForm({ onBack, email }: OtpFormProps) {
       if (res.token) {
         // Show success alert
         setShowSuccess(true);
-        
+
         // // Wait for success message, then do a hard redirect
         setTimeout(() => {
           window.location.href = "/dashboard";
@@ -61,7 +61,6 @@ export default function OtpForm({ onBack, email }: OtpFormProps) {
     }
   };
 
-  
   const handleResend = async () => {
     if (timeLeft > 0) return;
 
@@ -70,7 +69,7 @@ export default function OtpForm({ onBack, email }: OtpFormProps) {
 
     try {
       const res = await resendOTPAction(email, "");
-      
+
       if (res.success) {
         setTimeLeft(300); // Reset to 5 minutes
         setCode(Array(6).fill("")); // Clear OTP input
@@ -88,7 +87,7 @@ export default function OtpForm({ onBack, email }: OtpFormProps) {
     <>
       {/* Success Alert */}
       {showSuccess && (
-        <div className="fixed inset-0 z-50 top-4 flex justify-center bg-black/50">
+        <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 flex justify-center">
           <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-6 shadow-xl">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20">
@@ -96,7 +95,9 @@ export default function OtpForm({ onBack, email }: OtpFormProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p className="text-lg font-medium text-white">Admin login successful</p>
+              <p className="text-xs font-semibold text-white">
+                Admin login successful
+              </p>
             </div>
           </div>
         </div>
@@ -114,8 +115,7 @@ export default function OtpForm({ onBack, email }: OtpFormProps) {
       </h2>
 
       <p className="mt-2 text-sm text-[#b3b3b3]">
-        Enter 6-digit code sent to{" "}
-        <span className="text-white">{email}</span>
+        Enter 6-digit code sent to <span className="text-white">{email}</span>
       </p>
 
       {error && (
@@ -144,7 +144,8 @@ export default function OtpForm({ onBack, email }: OtpFormProps) {
       <p className="mt-4 text-center text-sm text-gray-400">
         {timeLeft > 0 ? (
           <>
-            Resend in <span className="text-[#cca33a]">{formatTime(timeLeft)}</span>
+            Resend in{" "}
+            <span className="text-[#cca33a]">{formatTime(timeLeft)}</span>
           </>
         ) : (
           <button
@@ -159,7 +160,3 @@ export default function OtpForm({ onBack, email }: OtpFormProps) {
     </>
   );
 }
-
-
-
-

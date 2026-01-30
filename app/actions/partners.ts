@@ -25,7 +25,7 @@ export async function createPartner(partnerData: CreatePartnerInput) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(partnerData),
+    body: partnerData
   });
 
   return res;
@@ -38,7 +38,7 @@ export interface CreatePartnerInput {
   contactPerson: string;
   contactEmail: string;
   contactPhone: string;
-  sponsorshipTier: "platinum" | "gold" | "silver" | "bronze";
+  sponsorshipTier:"" | "platinum" | "gold" | "silver" | "bronze";
   associatedEvents: string[];
   partnershipStartDate: string;
   partnershipEndDate: string;

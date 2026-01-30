@@ -2,159 +2,195 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { FaArrowLeftLong } from "react-icons/fa6"
-import { IoImageOutline, IoCalendarOutline, IoChevronDown, IoCheckmark } from "react-icons/io5"
+import { IoCalendarOutline, IoChevronDown, IoCheckmark } from "react-icons/io5"
 import { LuSave } from "react-icons/lu"
 import { createPartner } from "@/app/actions/partners"
 import SuccessModal from "@/components/SuccessModal"
-// import { uploadImage } from "@/app/actions/image-upload"
-import { uploadImageClient } from "@/utils/upload-image"
+import { getAllEvents } from "@/app/actions/event"
+import { Event } from "@/types/eventsType"
+import Spinner from "@/components/Spinner"
+import ImageUpload from "@/components/Image"
+import { usePartnerStore } from "@/store/partnership/create-patner"
 
+interface ValidationErrors {
+  partnerName?: string;
+  logoUrl?: string;
+  contactPerson?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  sponsorshipTier?: string;
+  selectedEvents?: string;
+  startDate?: string;
+  endDate?: string;
+}
 
 export default function AddPartner() {
-  const [partnerName, setPartnerName] = useState("")
-  const [logo, setLogo] = useState<File | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string>("")
-  const [logoUrl, setLogoUrl] = useState<string>("")
-  const [contactPerson, setContactPerson] = useState("")
-  const [contactEmail, setContactEmail] = useState("")
-  const [contactPhone, setContactPhone] = useState("")
-  const [sponsorshipTier, setSponsorshipTier] = useState("")
-  const [selectedEvents, setSelectedEvents] = useState<string[]>([])
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
-  const [internalNotes, setInternalNotes] = useState("")
-  const [showOnWebsite, setShowOnWebsite] = useState(true)
-  const [featureOnPage, setFeatureOnPage] = useState(true)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
+  const {
+    partnerName,
+    logoUrl,
+    contactPerson,
+    contactEmail,
+    contactPhone,
+    sponsorshipTier,
+    selectedEvents,
+    startDate,
+    endDate,
+    internalNotes,
+    showOnWebsite,
+    featureOnPage,
+    setField,
+    toggleEvent,
+    toggleShowOnWebsite,
+    toggleFeatureOnPage,
+  } = usePartnerStore();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [submitError, setSubmitError] = useState("");
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
 
   const router = useRouter();
 
-  const events = [
-    "AfroSpook 2025",
-    "Underground Sessions Vol. 3",
-    "Bass Revolution",
-    "Summer Vibes Festival",
-    "Jungle Takeover",
-    "Others"
-  ]
+  // Fetch events
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoadingEvents(true);
+      try {
+        const res = await getAllEvents();
+        if (res.success && res.data) {
+          setEvents(res.data);
+        }
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      } finally {
+        setLoadingEvents(false);
+      }
+    };
 
-  const toggleEvent = (event: string) => {
-    if (selectedEvents.includes(event)) {
-      setSelectedEvents(selectedEvents.filter(e => e !== event))
-    } else {
-      setSelectedEvents([...selectedEvents, event])
-    }
-  }
-const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  if (!e.target.files?.[0]) return;
-  const file = e.target.files[0];
+    fetchEvents();
+  }, []);
 
-  setIsUploadingLogo(true);
-  try {
-    const url = await uploadImageClient(file); // client-side fetch
-    setLogoUrl(url);
-    console.log("Logo uploaded:", url);
-  } catch (error) {
-    console.error(error);
-    setErrorMessage(error instanceof Error ? error.message : "Upload failed");
-  } finally {
-    setIsUploadingLogo(false);
-  }
-};
+  const handleLogoUploadComplete = (imageData: { url: string }) => {
+    setField("logoUrl", imageData.url);
+    setErrors(prev => ({ ...prev, logoUrl: undefined }));
+  };
 
-  const validateForm = () => {
+  const validateForm = (): boolean => {
+    const newErrors: ValidationErrors = {};
+
+    // Partner name validation
     if (!partnerName.trim()) {
-      setErrorMessage("Partner name is required")
-      return false
+      newErrors.partnerName = "Partner name is required";
+    } else if (partnerName.trim().length < 2) {
+      newErrors.partnerName = "Partner name must be at least 2 characters";
     }
+
+    // Logo validation
     if (!logoUrl) {
-      setErrorMessage("Brand logo is required")
-      return false
+      newErrors.logoUrl = "Brand logo is required";
     }
+
+    // Contact person validation
     if (!contactPerson.trim()) {
-      setErrorMessage("Contact person is required")
-      return false
+      newErrors.contactPerson = "Contact person is required";
     }
+
+    // Email validation
     if (!contactEmail.trim()) {
-      setErrorMessage("Contact email is required")
-      return false
+      newErrors.contactEmail = "Contact email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+      newErrors.contactEmail = "Please enter a valid email address";
     }
+
+    // Phone validation
     if (!contactPhone.trim()) {
-      setErrorMessage("Contact phone is required")
-      return false
+      newErrors.contactPhone = "Contact phone is required";
+    } else if (contactPhone.trim().length < 10) {
+      newErrors.contactPhone = "Please enter a valid phone number";
     }
+
+    // Sponsorship tier validation
     if (!sponsorshipTier) {
-      setErrorMessage("Sponsorship tier is required")
-      return false
+      newErrors.sponsorshipTier = "Sponsorship tier is required";
     }
+
+    // Events validation
     if (selectedEvents.length === 0) {
-      setErrorMessage("Please select at least one event")
-      return false
+      newErrors.selectedEvents = "Please select at least one event";
     }
+
+    // Start date validation
     if (!startDate.trim()) {
-      setErrorMessage("Partnership start date is required")
-      return false
+      newErrors.startDate = "Partnership start date is required";
     }
+
+    // End date validation
     if (!endDate.trim()) {
-      setErrorMessage("Partnership end date is required")
-      return false
+      newErrors.endDate = "Partnership end date is required";
+    } else if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
+      newErrors.endDate = "End date must be after start date";
     }
-    setErrorMessage("")
-    return true
-  }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSaveAndPublish = async () => {
-    if (!validateForm()) return
+    // Reset previous errors
+    setSubmitError("");
 
-    setIsLoading(true)
+    // Validate form
+    if (!validateForm()) {
+      setSubmitError("Please fill in all required fields correctly");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      // Prepare partner data with the uploaded logo URL
       const partnerData = {
-        partnerName,
+        partnerName: partnerName.trim(),
         brandLogo: logoUrl,
-        contactPerson,
-        contactEmail,
-        contactPhone,
-        sponsorshipTier: sponsorshipTier as "platinum" | "gold" | "silver" | "bronze",
+        contactPerson: contactPerson.trim(),
+        contactEmail: contactEmail.trim(),
+        contactPhone: contactPhone.trim(),
+        sponsorshipTier,
         associatedEvents: selectedEvents,
         partnershipStartDate: startDate,
         partnershipEndDate: endDate,
-        internalNotes: internalNotes || undefined,
+        internalNotes: internalNotes.trim() || "",
         visibilityControl: {
           publicWebsite: showOnWebsite,
-          partnershipPage: featureOnPage
-        }
-      }
+          partnershipPage: featureOnPage,
+        },
+      };
 
-      // Create partner
-      const response = await createPartner(partnerData)
+      const response = await createPartner(partnerData);
 
       if (response.success) {
-        setShowSuccessModal(true)
-        // Redirect after modal closes
+        setShowSuccessModal(true);
         setTimeout(() => {
-          router.push("/dashboard/partners")
-        }, 3000)
+          router.push("/dashboard/partners-and-sponsors");
+        }, 3000);
       } else {
-        setErrorMessage(response.message || "Failed to create partner")
+        setSubmitError(response.message || "Failed to create partner");
       }
     } catch (error) {
-      console.error('Error creating partner:', error)
-      setErrorMessage("An error occurred while creating the partner")
+      console.error("Error creating partner:", error);
+      setSubmitError("An error occurred while creating the partner");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleCancel = () => {
-    router.back()
-  }
+    router.back();
+  };
 
   return (
     <DashboardLayout>
@@ -181,28 +217,37 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
         {/* Action Buttons */}
         <div className="flex flex-col lg:flex-row gap-4 w-full lg:w-fit items-center">
-          <button 
+          <button
             onClick={handleSaveAndPublish}
-            disabled={isLoading || isUploadingLogo}
+            disabled={isLoading}
             className="border-2 border-[#cca33a] w-full lg:w-fit py-2 px-6 rounded-full text-sm text-[#cca33a] flex justify-center gap-2 items-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#cca33a] hover:text-black transition-colors"
           >
-            <LuSave />
-            {isLoading ? "Saving..." : "Save & Publish"}
+            {isLoading ? (
+              <>
+                <Spinner size="sm" color="border-[#cca33a]" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <LuSave />
+                Save & Publish
+              </>
+            )}
           </button>
-          <button 
+          <button
             onClick={handleCancel}
             disabled={isLoading}
-            className="hover:bg-gray-600 py-2 px-6 w-full lg:w-fit rounded-full text-sm text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="hover:bg-gray-600 py-2 px-6 w-full lg:w-fit rounded-full text-sm text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Cancel
           </button>
         </div>
       </section>
 
-      {/* Error Message */}
-      {errorMessage && (
+      {/* Global Error Message */}
+      {submitError && (
         <div className="mb-6 bg-red-500/10 border border-red-500/50 rounded-lg px-4 py-3 text-sm text-red-500">
-          {errorMessage}
+          {submitError}
         </div>
       )}
 
@@ -217,52 +262,35 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         <input
           type="text"
           value={partnerName}
-          onChange={(e) => setPartnerName(e.target.value)}
+          onChange={(e) => {
+            setField("partnerName", e.target.value);
+            setErrors(prev => ({ ...prev, partnerName: undefined }));
+          }}
           placeholder="e.g. Red Bull, Pioneer DJ"
-          className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-[#6f6f6f]"
+          className={`w-full bg-transparent border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-[#6f6f6f] ${
+            errors.partnerName ? "border-red-500" : "border-[#2a2a2a]"
+          }`}
         />
+        {errors.partnerName && (
+          <p className="text-red-500 text-xs mt-1">{errors.partnerName}</p>
+        )}
       </div>
 
       {/* Brand Logo */}
-      <div className="mb-6">
-        <label className="block text-sm mb-2">
-          Brand Logo <span className="text-red-500">*</span>
-        </label>
-        <div className="border-2 border-dashed border-[#2a2a2a] rounded-lg h-28 flex flex-col items-center justify-center cursor-pointer hover:border-gray-600 transition-colors">
-          <input
-            type="file"
-            accept="image/png,image/svg+xml,image/jpeg,image/jpg"
-            onChange={handleLogoUpload}
-            className="hidden"
-            id="logo-upload"
-            disabled={isUploadingLogo}
-          />
-          <label htmlFor="logo-upload" className="cursor-pointer text-center w-full h-full flex items-center justify-center">
-            {isUploadingLogo ? (
-              <div className="flex flex-col items-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#CCA33A] mb-2"></div>
-                <p className="text-xs text-gray-400">Uploading...</p>
-              </div>
-            ) : logoPreview ? (
-              <div className="flex flex-col items-center">
-                <img src={logoPreview} alt="Logo preview" className="h-20 object-contain mx-auto" />
-                <p className="text-xs text-green-500 mt-1">✓ Uploaded successfully</p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center">
-                <IoImageOutline className="text-3xl text-gray-600 mb-2" />
-                <p className="text-xs">
-                  <span className="text-[#CCA33A]">Click to upload</span> or drag and drop
-                </p>
-                <p className="text-xs text-gray-600 mt-1">PNG, JPG or SVG (Max 2MB)</p>
-              </div>
-            )}
-          </label>
-        </div>
-      </div>
+      <ImageUpload
+        label="Brand Logo"
+        required
+        accept="image/png,image/svg+xml,image/jpeg,image/jpg"
+        maxSize={2}
+        onUploadComplete={handleLogoUploadComplete}
+        error={errors.logoUrl}
+        helperText="PNG, JPG or SVG"
+        previewClassName="h-28"
+        initialImage={logoUrl}
+      />
 
       {/* Contact Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 mt-6">
         {/* Contact Person */}
         <div>
           <label className="block text-sm mb-2">
@@ -271,10 +299,18 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           <input
             type="text"
             value={contactPerson}
-            onChange={(e) => setContactPerson(e.target.value)}
+            onChange={(e) => {
+              setField("contactPerson", e.target.value);
+              setErrors(prev => ({ ...prev, contactPerson: undefined }));
+            }}
             placeholder="John Doe"
-            className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-[#6f6f6f]"
+            className={`w-full bg-transparent border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-[#6f6f6f] ${
+              errors.contactPerson ? "border-red-500" : "border-[#2a2a2a]"
+            }`}
           />
+          {errors.contactPerson && (
+            <p className="text-red-500 text-xs mt-1">{errors.contactPerson}</p>
+          )}
         </div>
 
         {/* Contact Email */}
@@ -285,10 +321,18 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           <input
             type="email"
             value={contactEmail}
-            onChange={(e) => setContactEmail(e.target.value)}
+            onChange={(e) => {
+              setField("contactEmail", e.target.value);
+              setErrors(prev => ({ ...prev, contactEmail: undefined }));
+            }}
             placeholder="support@johndoe.com"
-            className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-[#6f6f6f]"
+            className={`w-full bg-transparent border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-[#6f6f6f] ${
+              errors.contactEmail ? "border-red-500" : "border-[#2a2a2a]"
+            }`}
           />
+          {errors.contactEmail && (
+            <p className="text-red-500 text-xs mt-1">{errors.contactEmail}</p>
+          )}
         </div>
 
         {/* Contact Phone */}
@@ -299,10 +343,18 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           <input
             type="tel"
             value={contactPhone}
-            onChange={(e) => setContactPhone(e.target.value)}
+            onChange={(e) => {
+              setField("contactPhone", e.target.value);
+              setErrors(prev => ({ ...prev, contactPhone: undefined }));
+            }}
             placeholder="09030203647"
-            className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-[#6f6f6f]"
+            className={`w-full bg-transparent border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-[#6f6f6f] ${
+              errors.contactPhone ? "border-red-500" : "border-[#2a2a2a]"
+            }`}
           />
+          {errors.contactPhone && (
+            <p className="text-red-500 text-xs mt-1">{errors.contactPhone}</p>
+          )}
         </div>
       </div>
 
@@ -317,17 +369,35 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         <div className="relative">
           <select
             value={sponsorshipTier}
-            onChange={(e) => setSponsorshipTier(e.target.value)}
-            className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm appearance-none cursor-pointer focus:outline-none focus:border-gray-600"
+            onChange={(e) => {
+              setField("sponsorshipTier", e.target.value as any);
+              setErrors(prev => ({ ...prev, sponsorshipTier: undefined }));
+            }}
+            className={`w-full bg-transparent border rounded-lg px-4 py-3 text-sm appearance-none cursor-pointer focus:outline-none focus:border-gray-600 ${
+              errors.sponsorshipTier ? "border-red-500" : "border-[#2a2a2a]"
+            }`}
           >
-            <option value="" className="bg-gray-900">Select Tier</option>
-            <option value="platinum" className="bg-gray-900">Platinum</option>
-            <option value="gold" className="bg-gray-900">Gold</option>
-            <option value="silver" className="bg-gray-900">Silver</option>
-            <option value="bronze" className="bg-gray-900">Bronze</option>
+            <option value="" className="bg-gray-900">
+              Select Tier
+            </option>
+            <option value="platinum" className="bg-gray-900">
+              Platinum
+            </option>
+            <option value="gold" className="bg-gray-900">
+              Gold
+            </option>
+            <option value="silver" className="bg-gray-900">
+              Silver
+            </option>
+            <option value="bronze" className="bg-gray-900">
+              Bronze
+            </option>
           </select>
           <IoChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         </div>
+        {errors.sponsorshipTier && (
+          <p className="text-red-500 text-xs mt-1">{errors.sponsorshipTier}</p>
+        )}
       </div>
 
       {/* Associated Events */}
@@ -335,22 +405,37 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         <label className="block text-sm mb-2">
           Associated Events <span className="text-red-500">*</span>
         </label>
-        <div className="flex flex-wrap gap-3">
-          {events.map((event) => (
-            <button
-              key={event}
-              onClick={() => toggleEvent(event)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
-                selectedEvents.includes(event)
-                  ? "bg-[#CCA33A] text-black"
-                  : "bg-transparent border border-[#2a2a2a] text-gray-400 hover:border-gray-600"
-              }`}
-            >
-              {event}
-              {selectedEvents.includes(event) && <IoCheckmark className="text-base" />}
-            </button>
-          ))}
-        </div>
+        {loadingEvents ? (
+          <div className="flex items-center justify-center py-8">
+            <Spinner size="md" />
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-3">
+            {events.map((event) => (
+              <button
+                key={event._id}
+                type="button"
+                onClick={() => {
+                  toggleEvent(event._id);
+                  setErrors(prev => ({ ...prev, selectedEvents: undefined }));
+                }}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+                  selectedEvents.includes(event._id)
+                    ? "bg-[#CCA33A] text-black"
+                    : "bg-transparent border border-[#2a2a2a] text-gray-400 hover:border-gray-600"
+                }`}
+              >
+                {event.eventDetails.eventTitle}
+                {selectedEvents.includes(event._id) && (
+                  <IoCheckmark className="text-base" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+        {errors.selectedEvents && (
+          <p className="text-red-500 text-xs mt-1">{errors.selectedEvents}</p>
+        )}
       </div>
 
       {/* Partnership Dates */}
@@ -364,11 +449,19 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             <input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-[#6f6f6f]"
+              onChange={(e) => {
+                setField("startDate", e.target.value);
+                setErrors(prev => ({ ...prev, startDate: undefined }));
+              }}
+              className={`w-full bg-transparent border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 ${
+                errors.startDate ? "border-red-500" : "border-[#2a2a2a]"
+              }`}
             />
             <IoCalendarOutline className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
+          {errors.startDate && (
+            <p className="text-red-500 text-xs mt-1">{errors.startDate}</p>
+          )}
         </div>
 
         {/* End Date */}
@@ -380,20 +473,30 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             <input
               type="date"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-[#6f6f6f]"
+              onChange={(e) => {
+                setField("endDate", e.target.value);
+                setErrors(prev => ({ ...prev, endDate: undefined }));
+              }}
+              className={`w-full bg-transparent border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 ${
+                errors.endDate ? "border-red-500" : "border-[#2a2a2a]"
+              }`}
             />
             <IoCalendarOutline className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
+          {errors.endDate && (
+            <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>
+          )}
         </div>
       </div>
 
       {/* Internal Notes */}
       <div className="mb-8">
-        <label className="block text-sm mb-2">Internal Notes</label>
+        <label className="block text-sm mb-2">
+          Internal Notes <span className="text-gray-500 text-xs">(Optional)</span>
+        </label>
         <textarea
           value={internalNotes}
-          onChange={(e) => setInternalNotes(e.target.value)}
+          onChange={(e) => setField("internalNotes", e.target.value)}
           placeholder="Add internal notes about this partnership, activation details, deliverables, etc..."
           rows={5}
           maxLength={500}
@@ -405,15 +508,18 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       {/* VISIBILITY CONTROLS */}
       <h2 className="text-lg sm:text-xl font-semibold mb-6">VISIBILITY CONTROLS</h2>
 
-      <div className="space-y-4">
+      <div className="space-y-4 mb-10">
         {/* Show Partner on Public Website */}
         <div className="bg-[#151515] border border-[#2a2a2a] rounded-lg p-4 sm:p-6 flex items-center justify-between">
           <div>
             <p className="text-sm font-medium">Show Partner on Public Website</p>
-            <p className="text-xs text-gray-500 mt-0.5">Display this partner in public-facing event pages</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Display this partner in public-facing event pages
+            </p>
           </div>
           <button
-            onClick={() => setShowOnWebsite(!showOnWebsite)}
+            type="button"
+            onClick={toggleShowOnWebsite}
             className={`relative w-14 h-7 rounded-full transition-colors ${
               showOnWebsite ? "bg-[#CCA33A]" : "bg-gray-700"
             }`}
@@ -430,10 +536,13 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         <div className="bg-[#151515] border border-[#2a2a2a] rounded-lg p-4 sm:p-6 flex items-center justify-between">
           <div>
             <p className="text-sm font-medium">Feature on Partnership Page</p>
-            <p className="text-xs text-gray-500 mt-0.5">Highlight this partner on the dedicated partnerships page</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Highlight this partner on the dedicated partnerships page
+            </p>
           </div>
           <button
-            onClick={() => setFeatureOnPage(!featureOnPage)}
+            type="button"
+            onClick={toggleFeatureOnPage}
             className={`relative w-14 h-7 rounded-full transition-colors ${
               featureOnPage ? "bg-[#CCA33A]" : "bg-gray-700"
             }`}
@@ -447,5 +556,5 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         </div>
       </div>
     </DashboardLayout>
-  )
+  );
 }

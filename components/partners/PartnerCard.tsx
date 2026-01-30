@@ -99,7 +99,7 @@ const PartnerCard: React.FC<PartnerCardProps> = ({
       </div>
 
       {/* Email and Phone */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <div>
           <p className="text-[#B3B3B3] text-sm mb-1">Email</p>
           <p className="text-[#f9f7f4]">{email}</p>

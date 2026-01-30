@@ -414,10 +414,10 @@ export default function SalesAndTransactions() {
         </div>
 
         {/* Export Data Button with Dropdown */}
-        <div className="relative">
+        <div className="relative w-full sm:w-fit">
           <button
             onClick={() => setShowExportMenu(!showExportMenu)}
-            className="flex gap-2 items-center rounded-xl bg-[#cca33a] px-4 py-3 font-semibold hover:bg-[#b8923a] transition-colors"
+            className="flex gap-2 w-full sm:w-fit justify-center items-center rounded-xl bg-[#cca33a] px-4 py-3 font-semibold hover:bg-[#b8923a] transition-colors"
             disabled={allTransactions.length === 0}
           >
             <MdOutlineFileDownload size={20} />

@@ -35,7 +35,7 @@ export default function PartnerStats() {
           // Calculate stats
           const totalPartners = partners.length;
           const activePartners = partners.filter(
-            (p) => p.status === "Active"
+            (p) => p.status
           ).length;
           const platinumTier = partners.filter(
             (p) => p.sponsorshipTier.toLowerCase() === "platinum"

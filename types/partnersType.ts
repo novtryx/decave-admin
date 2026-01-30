@@ -26,11 +26,16 @@ export interface Partner {
   contactEmail: string;
   contactPhone: string;
   sponsorshipTier: "platinum" | "gold" | "silver" | "bronze";
-  associatedEvents: string[]; // Array of event IDs
+  associatedEvents:  {
+    _id: string;
+    eventDetails: {
+      eventTitle: string;
+    };
+  }[];
   partnershipStartDate: string;
   partnershipEndDate: string;
   internalNotes?: string;
-  status: "Active" | "Inactive" | "Pending";
+  status:boolean
   visibilityControl: {
     publicWebsite: boolean;
     partnershipPage: boolean;

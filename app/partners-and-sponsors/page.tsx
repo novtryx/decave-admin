@@ -101,7 +101,7 @@ export default function PartnersAndSponsors() {
         {/* Add Partner Button */}
         <Link
           href="/partners-and-sponsors/add-partner"
-          className="flex gap-2 items-center rounded-xl bg-[#cca33a] px-4 py-3 font-semibold hover:bg-[#b8922f] transition-colors"
+          className="flex gap-2 w-full sm:w-fit justify-center items-center rounded-xl bg-[#cca33a] px-4 py-3 font-semibold hover:bg-[#b8922f] transition-colors"
         >
           <FaPlus size={20} />
           Add Partner

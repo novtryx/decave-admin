@@ -88,7 +88,7 @@ export default function OtpForm({ onBack, email }: OtpFormProps) {
       {/* Success Alert */}
       {showSuccess && (
         <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 flex justify-center">
-          <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-6 shadow-xl">
+          <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-3 shadow-xl">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20">
                 <svg className="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

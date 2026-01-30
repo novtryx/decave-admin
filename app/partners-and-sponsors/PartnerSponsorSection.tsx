@@ -106,7 +106,7 @@ import PartnerCard from "@/components/partners/PartnerCard";
 import { getAllPartners } from "@/app/actions/partners";
 import { Partner } from "@/types/partnersType";
 
-type TicketType = 'Platinum' | 'Gold' | 'Silver' | 'Bronze';
+type TicketType = 'platinum' | 'gold' | 'silver' | 'bronze';
 
 interface PartnerSponsorSectionProps {
   searchQuery?: string;
@@ -202,12 +202,12 @@ export default function PartnerSponsorSection({
     <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-20">
       {filteredPartners.map((partner) => {
         // Capitalize first letter and cast to correct type
-        const capitalizedTier = (partner.sponsorshipTier.charAt(0).toUpperCase() + 
+        const capitalizedTier = (partner.sponsorshipTier.charAt(0) + 
           partner.sponsorshipTier.slice(1)) as TicketType;
         
         // Ensure status is either 'Active' or 'Inactive'
-        const partnerStatus: 'Active' | 'Inactive' = 
-          partner.status === 'Inactive' ? 'Inactive' : 'Active';
+        const partnerStatus: true | false = 
+          partner.status  ? true : false;
 
         return (
           <PartnerCard
@@ -220,17 +220,8 @@ export default function PartnerSponsorSection({
             email={partner.contactEmail}
             phone={partner.contactPhone}
             associatedEvents={
-              Array.isArray(partner.associatedEvents) 
-                ? partner.associatedEvents.map((event) => {
-                    // If event is an object with eventDetails
-                    if (typeof event === 'object' && event !== null && 'eventDetails' in event) {
-                      return { name: (event as any).eventDetails?.eventTitle || 'Untitled Event' };
-                    }
-                    // If event is just a string (event ID)
-                    return { name: typeof event === 'string' ? event : 'Unknown Event' };
-                  })
-                : []
-            }
+              partner.associatedEvents
+          }
             activationNotes={partner.internalNotes || "No notes available"}
             onEdit={() => console.log("Edit partner:", partner._id)}
             onDelete={() => console.log("Delete partner:", partner._id)}

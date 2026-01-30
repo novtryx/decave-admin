@@ -219,7 +219,7 @@ export default function EventDetails({ step, setStep }: StepProps) {
 
   /** Handle form submission */
   const handleCreateEvent = async () => {
-    startLoading()
+   
     // Reset previous errors
     setSubmitError("");
 
@@ -230,7 +230,7 @@ export default function EventDetails({ step, setStep }: StepProps) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-
+     startLoading()
     setIsSubmitting(true);
 
     try {
@@ -256,6 +256,7 @@ export default function EventDetails({ step, setStep }: StepProps) {
           }
         }
         res = await EditEventAction(data, eventId)
+        stopLoading()
       }else{
         res = await CreateEventAction({
         eventBanner: bannerFile?.url,
@@ -286,6 +287,7 @@ export default function EventDetails({ step, setStep }: StepProps) {
       console.log("res==", res);
       router.push(`?id=${res?.data?._id}`);
       setStep(step + 1);
+      stopLoading()
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "An unexpected error occurred";

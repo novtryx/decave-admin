@@ -3,13 +3,13 @@
 import { protectedFetch } from "@/lib/protectedFetch";
 import { Transaction } from "@/types/transactionsType";
 
-export async function getAllTransactions() {
+export async function getAllTransactions(page: number = 1, limit: number = 10) {
   try {
     const res = await protectedFetch<{
       message: string;
       success: boolean;
       data: Transaction[];
-      pagination?: {
+      pagination: {
         total: number;
         page: number;
         limit: number;
@@ -17,11 +17,11 @@ export async function getAllTransactions() {
         hasNext: boolean;
         hasPrev: boolean;
       };
-    }>("/transaction", {
+    }>(`/transaction?page=${page}&limit=${limit}`, {
       method: "GET",
     });
 
-    console.log("getAllTransactions response:", res); // Debug log
+    console.log("getAllTransactions response:", res);
 
     return res;
   } catch (error) {
@@ -30,6 +30,14 @@ export async function getAllTransactions() {
       success: false,
       message: error instanceof Error ? error.message : "Failed to fetch transactions",
       data: [],
+      pagination: {
+        total: 0,
+        page: 1,
+        limit: 10,
+        pages: 0,
+        hasNext: false,
+        hasPrev: false,
+      },
     };
   }
 }

@@ -4,8 +4,6 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { useEffect, useState, Suspense } from "react";
 import { FaArrowLeftLong } from "react-icons/fa6";
 import { motion, AnimatePresence } from "framer-motion"
-
-import { LuSave } from "react-icons/lu";
 import EventDetails from "./EventDetails";
 import AboutEvent from "./AboutEvent";
 import Tickets from "./Tickets";

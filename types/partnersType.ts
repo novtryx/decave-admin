@@ -6,7 +6,12 @@ export interface Partner {
   contactEmail: string;
   contactPhone: string;
   sponsorshipTier: "platinum" | "gold" | "silver" | "bronze";
-  associatedEvents: string[];
+  associatedEvents: {
+    _id:string,
+    eventDetails:{
+      eventTitle: string;
+    }
+  }[];
   partnershipStartDate: string;
   partnershipEndDate: string;
   internalNotes?: string;
@@ -16,4 +21,7 @@ export interface Partner {
   };
   createdAt?: string;
   updatedAt?: string;
+  isActive?: boolean;
+  daysRemaining: number;
 }
+

@@ -7,6 +7,10 @@ import { SortDropdown } from "@/components/events/SortDropdown";
 import { FiSearch } from "react-icons/fi";
 import PartnerSponsorSection from "./PartnerSponsorSection";
 import Link from "next/link";
+import { useEffect } from "react";
+import { getAllPartners } from "../actions/partners";
+import Spinner from "@/components/Spinner";
+import { usePartnerListStore } from "@/store/partnership/get-partners";
 
 export default function PartnersAndSponsors() {
   const periodOptions = [
@@ -16,6 +20,25 @@ export default function PartnersAndSponsors() {
     { label: "Gold", value: "gold" },
     { label: "Platinum", value: "platinum" },
   ];
+
+
+    const { 
+    partners, 
+    isLoading, 
+    error, 
+    fetchPartners,
+    getActivePartners,
+    getPartnersByTier 
+  } = usePartnerListStore();
+
+  useEffect(() => {
+    fetchPartners();
+  }, [fetchPartners]);
+
+  // const activePartners = getActivePartners();
+  const goldPartners = getPartnersByTier("gold");
+
+
   return (
     <DashboardLayout>
       {/* Heading */}

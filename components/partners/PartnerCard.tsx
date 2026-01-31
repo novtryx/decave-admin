@@ -58,7 +58,7 @@ const PartnerCard: React.FC<PartnerCardProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start border-b border-[#2a2a2a] pb-4 mb-4 gap-3">
         <div className="flex items-start sm:items-center gap-3 flex-1 w-full">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 border border-[#2A2A2A] rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 border border-[#2A2A2A] rounded-lg flex items-center justify-center overflow-hidden shrink-0">
             <Image
               src={logoUrl}
               alt={`${name} logo`}

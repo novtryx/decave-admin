@@ -466,6 +466,7 @@ function SalesAndTransactionsContent() {
       const response = await getAllTransactions(page);
 
       console.log("API Response:", response);
+      console.log("First transaction buyers:", response.data?.[0]?.buyers);
 
       if (response && response.success && Array.isArray(response.data)) {
         const processedTransactions = processTransactionsFromAPI(response.data);

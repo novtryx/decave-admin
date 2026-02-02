@@ -9,7 +9,7 @@
 //   TransactionTable,
 //   Transaction,
 // } from "@/components/sales-and-transactions/TransactionTable";
-// import { useState, useEffect, useMemo } from "react";
+// import { useState, useEffect, useMemo, Suspense } from "react";
 // import { getAllTransactions } from "../actions/transaction";
 // import {
 //   searchTransactions,
@@ -23,7 +23,7 @@
 // import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 // import { useRouter, useSearchParams } from "next/navigation";
 
-// export default function SalesAndTransactions() {
+// function SalesAndTransactionsContent() {
 //   const router = useRouter();
 //   const searchParams = useSearchParams();
   
@@ -46,6 +46,8 @@
 
 //   const [error, setError] = useState("");
 //   const [showExportMenu, setShowExportMenu] = useState(false);
+
+//   // Filter states
 //   const [searchQuery, setSearchQuery] = useState("");
 //   const [statusFilter, setStatusFilter] = useState("all");
 //   const [sortOrder, setSortOrder] = useState<"all" | "new" | "old">("all");
@@ -362,6 +364,21 @@
 //   );
 // }
 
+// // Main component with Suspense boundary
+// export default function SalesAndTransactions() {
+//   return (
+//     <Suspense fallback={
+//       <DashboardLayout>
+//         <div className="flex items-center justify-center py-20">
+//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#cca33a]"></div>
+//         </div>
+//       </DashboardLayout>
+//     }>
+//       <SalesAndTransactionsContent />
+//     </Suspense>
+//   );
+// }
+
 
 "use client";
 
@@ -383,7 +400,6 @@ import {
   filterTransactionsByPeriod,
   exportTransactions,
 } from "@/constants/functions";
-import { useLoadingStore } from "@/store/LoadingState";
 import { processTransactionsFromAPI } from "@/utils/transaction-helper";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -395,7 +411,8 @@ function SalesAndTransactionsContent() {
   // Get page from URL, default to 1
   const currentPage = parseInt(searchParams.get("page") || "1");
 
-  const { isLoading, startLoading, stopLoading } = useLoadingStore();
+  // Local loading state instead of zustand
+  const [isLoading, setIsLoading] = useState(false);
 
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   
@@ -442,7 +459,7 @@ function SalesAndTransactionsContent() {
   }, [currentPage]);
 
   const fetchTransactions = async (page: number) => {
-    startLoading();
+    setIsLoading(true);
     setError("");
 
     try {
@@ -476,7 +493,7 @@ function SalesAndTransactionsContent() {
       );
       setAllTransactions([]);
     } finally {
-      stopLoading();
+      setIsLoading(false);
     }
   };
 

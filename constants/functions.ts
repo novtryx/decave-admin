@@ -87,7 +87,8 @@ export function searchTransactions(
       .includes(query);
 
     // Search in buyer email
-    const matchesBuyer = transaction.buyers.toLowerCase().includes(query);
+    // const matchesBuyer = transaction.buyers.toLowerCase().includes(query);
+    const matchesBuyer = transaction.buyerEmail.toLowerCase().includes(query.toLowerCase());
 
     // Search in ticket type
     const matchesTicketType = transaction.ticket.ticketName
@@ -229,7 +230,7 @@ export function transactionsToCSV(transactions: Transaction[]): string {
       transaction.ticket.currency,
       quantitySold,
       transaction.ticket.availableQuantity,
-      transaction.buyers,
+      transaction.buyerEmail,
       transaction.status,
       transaction.paystackId,
       formatDateForExport(transaction.createdAt),
@@ -330,7 +331,7 @@ export function transactionsToTSV(transactions: Transaction[]): string {
       quantitySold,
       transaction.ticket.availableQuantity,
       transaction.ticket.initialQuantity,
-      transaction.buyers,
+      transaction.buyerEmail,
       transaction.status.toUpperCase(),
       transaction.paystackId,
       formatDateForExport(transaction.createdAt),

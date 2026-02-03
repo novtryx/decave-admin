@@ -9,6 +9,12 @@ export async function getAllTransactions(page: number = 1, limit: number = 10) {
       message: string;
       success: boolean;
       data: Transaction[];
+      stats?: {
+        totalRevenue: number;
+        totalPending: number;
+        totalFailed: number;
+        totalCompleted: number;
+      };
       pagination: {
         total: number;
         page: number;

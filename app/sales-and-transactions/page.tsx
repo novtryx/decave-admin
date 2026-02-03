@@ -1,3 +1,5 @@
+
+
 // "use client";
 
 // import { DashboardLayout } from "@/components/DashboardLayout";
@@ -18,7 +20,6 @@
 //   filterTransactionsByPeriod,
 //   exportTransactions,
 // } from "@/constants/functions";
-// import { useLoadingStore } from "@/store/LoadingState";
 // import { processTransactionsFromAPI } from "@/utils/transaction-helper";
 // import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 // import { useRouter, useSearchParams } from "next/navigation";
@@ -30,7 +31,8 @@
 //   // Get page from URL, default to 1
 //   const currentPage = parseInt(searchParams.get("page") || "1");
 
-//   const { isLoading, startLoading, stopLoading } = useLoadingStore();
+//   // Local loading state instead of zustand
+//   const [isLoading, setIsLoading] = useState(false);
 
 //   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   
@@ -77,13 +79,14 @@
 //   }, [currentPage]);
 
 //   const fetchTransactions = async (page: number) => {
-//     startLoading();
+//     setIsLoading(true);
 //     setError("");
 
 //     try {
 //       const response = await getAllTransactions(page);
 
 //       console.log("API Response:", response);
+//       console.log("First transaction buyers:", response.data?.[0]?.buyers);
 
 //       if (response && response.success && Array.isArray(response.data)) {
 //         const processedTransactions = processTransactionsFromAPI(response.data);
@@ -111,7 +114,7 @@
 //       );
 //       setAllTransactions([]);
 //     } finally {
-//       stopLoading();
+//       setIsLoading(false);
 //     }
 //   };
 
@@ -387,10 +390,7 @@ import { MdOutlineFileDownload } from "react-icons/md";
 import TransactionStats from "./TransactionStats";
 import { FiSearch } from "react-icons/fi";
 import { SortDropdown } from "@/components/events/SortDropdown";
-import {
-  TransactionTable,
-  Transaction,
-} from "@/components/sales-and-transactions/TransactionTable";
+import { TransactionTable } from "@/components/sales-and-transactions/TransactionTable";
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { getAllTransactions } from "../actions/transaction";
 import {
@@ -403,21 +403,17 @@ import {
 import { processTransactionsFromAPI } from "@/utils/transaction-helper";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Transaction, TransactionPagination } from "@/types/transactionsType";
 
 function SalesAndTransactionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // Get page from URL, default to 1
   const currentPage = parseInt(searchParams.get("page") || "1");
-
-  // Local loading state instead of zustand
   const [isLoading, setIsLoading] = useState(false);
-
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   
-  // Pagination state
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<TransactionPagination>({
     total: 0,
     page: 1,
     limit: 10,
@@ -429,7 +425,6 @@ function SalesAndTransactionsContent() {
   const [error, setError] = useState("");
   const [showExportMenu, setShowExportMenu] = useState(false);
 
-  // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState<"all" | "new" | "old">("all");
@@ -465,17 +460,11 @@ function SalesAndTransactionsContent() {
     try {
       const response = await getAllTransactions(page);
 
-      console.log("API Response:", response);
-      console.log("First transaction buyers:", response.data?.[0]?.buyers);
-
       if (response && response.success && Array.isArray(response.data)) {
         const processedTransactions = processTransactionsFromAPI(response.data);
         
-        console.log("Processed Transactions:", processedTransactions.slice(0, 2));
-        
         setAllTransactions(processedTransactions);
         
-        // Update pagination state
         if (response.pagination) {
           setPagination(response.pagination);
         }
@@ -498,7 +487,6 @@ function SalesAndTransactionsContent() {
     }
   };
 
-  // Client-side filtering (applied to current page data only)
   const filteredTransactions = useMemo(() => {
     let result = allTransactions;
 
@@ -520,7 +508,6 @@ function SalesAndTransactionsContent() {
     setShowExportMenu(false);
   };
 
-  // Pagination handlers - Now update URL query params
   const handlePreviousPage = () => {
     if (pagination.hasPrev) {
       router.push(`?page=${currentPage - 1}`);
@@ -548,18 +535,16 @@ function SalesAndTransactionsContent() {
           <p className="text-[#B3B3B3]">View ticket sales and payment history</p>
         </div>
 
-        {/* Export Data Button with Dropdown */}
         <div className="relative w-full sm:w-fit">
           <button
             onClick={() => setShowExportMenu(!showExportMenu)}
-            className="flex gap-2 w-full sm:w-fit justify-center items-center rounded-xl bg-[#cca33a] px-4 py-3 font-semibold hover:bg-[#b8923a] transition-colors"
+            className="flex gap-2 w-full sm:w-fit justify-center items-center rounded-xl bg-[#cca33a] px-4 py-3 font-semibold hover:bg-[#b8923a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={allTransactions.length === 0}
           >
             <MdOutlineFileDownload size={20} />
             Export Data
           </button>
 
-          {/* Export Menu */}
           {showExportMenu && (
             <div className="absolute right-0 mt-2 w-48 bg-[#18181B] border border-[#27272A] rounded-xl shadow-lg z-10">
               <button
@@ -585,7 +570,6 @@ function SalesAndTransactionsContent() {
         </div>
       </section>
 
-      {/* Transaction Stats Section */}
       <TransactionStats />
 
       {/* Search and Filter Section */}
@@ -635,7 +619,6 @@ function SalesAndTransactionsContent() {
         </div>
       </section>
 
-      {/* Results Summary */}
       {searchQuery && (
         <div className="mb-4 text-sm text-[#B3B3B3]">
           Found {filteredTransactions.length} transaction
@@ -644,14 +627,12 @@ function SalesAndTransactionsContent() {
         </div>
       )}
 
-      {/* Error Message */}
       {error && (
         <div className="mb-6 bg-red-500/10 border border-red-500/50 rounded-lg px-4 py-3 text-sm text-red-500">
           {error}
         </div>
       )}
 
-      {/* Transaction Table */}
       <section className="mb-6">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
@@ -679,19 +660,15 @@ function SalesAndTransactionsContent() {
         )}
       </section>
 
-      {/* Pagination Controls */}
       {!isLoading && allTransactions.length > 0 && (
         <section className="mb-20 flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Pagination Info */}
           <div className="text-sm text-[#B3B3B3]">
             Showing {((currentPage - 1) * pagination.limit) + 1} to{" "}
             {Math.min(currentPage * pagination.limit, pagination.total)} of{" "}
             {pagination.total} transactions
           </div>
 
-          {/* Pagination Buttons */}
           <div className="flex items-center gap-2">
-            {/* Previous Button */}
             <button
               onClick={handlePreviousPage}
               disabled={!pagination.hasPrev}
@@ -701,7 +678,6 @@ function SalesAndTransactionsContent() {
               Previous
             </button>
 
-            {/* Page Numbers */}
             <div className="hidden sm:flex items-center gap-1">
               {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((page) => (
                 <button
@@ -718,12 +694,10 @@ function SalesAndTransactionsContent() {
               ))}
             </div>
 
-            {/* Mobile: Current Page Display */}
             <div className="sm:hidden px-3 py-2 bg-[#18181B] border border-[#27272A] text-[#F9F7F4] rounded-lg">
               {currentPage} / {pagination.pages}
             </div>
 
-            {/* Next Button */}
             <button
               onClick={handleNextPage}
               disabled={!pagination.hasNext}
@@ -736,7 +710,6 @@ function SalesAndTransactionsContent() {
         </section>
       )}
 
-      {/* Click outside to close export menu */}
       {showExportMenu && (
         <div
           className="fixed inset-0 z-0"
@@ -747,7 +720,6 @@ function SalesAndTransactionsContent() {
   );
 }
 
-// Main component with Suspense boundary
 export default function SalesAndTransactions() {
   return (
     <Suspense fallback={

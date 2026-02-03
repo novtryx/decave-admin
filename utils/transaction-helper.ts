@@ -44,6 +44,10 @@ export function transformTransactionData(rawTransaction: any): any {
     amount: typeof rawTransaction.amount === 'string' 
       ? parseFloat(rawTransaction.amount) 
       : rawTransaction.amount,
+    // Preserve buyerEmail
+    buyerEmail: rawTransaction.buyerEmail || '',
+    // Preserve revenue
+    revenue: typeof rawTransaction.revenue === 'number' ? rawTransaction.revenue : 0,
   };
 }
 

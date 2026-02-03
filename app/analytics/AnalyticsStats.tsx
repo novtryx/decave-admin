@@ -1,6 +1,3 @@
-
-
-
 import FlashCard from "@/components/dashboard/FlashCard";
 import { FiTrendingUp, FiDollarSign } from 'react-icons/fi';
 import { IoTicketOutline, IoCalendarOutline } from 'react-icons/io5';

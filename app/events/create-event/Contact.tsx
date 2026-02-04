@@ -1,5 +1,5 @@
-import { IoArrowBack } from "react-icons/io5"
-import { useContactStore } from "@/store/create-events/contact"; 
+import { IoArrowBack } from "react-icons/io5";
+import { useContactStore } from "@/store/create-events/contact";
 import { useSingleEventStore } from "@/store/events/SingleEvent";
 import { useLoadingStore } from "@/store/LoadingState";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -20,10 +20,17 @@ interface ValidationErrors {
 
 export default function Contact({ step, setStep }: StepProps) {
   const searchParams = useSearchParams();
-  const eventId = searchParams.get('id') ?? "";
+  const eventId = searchParams.get("id") ?? "";
   const router = useRouter();
-  
-  const { security, medical, lostFound, supportingInfo, setField, initializeContact } = useContactStore();
+
+  const {
+    security,
+    medical,
+    lostFound,
+    supportingInfo,
+    setField,
+    initializeContact,
+  } = useContactStore();
   const { event } = useSingleEventStore();
   const { startLoading, stopLoading } = useLoadingStore();
 
@@ -36,7 +43,7 @@ export default function Contact({ step, setStep }: StepProps) {
   useEffect(() => {
     if (event?.emergencyContact && !isInitialized && eventId) {
       console.log("Initializing Contact with:", event.emergencyContact);
-      
+
       initializeContact({
         security: event.emergencyContact.security || "",
         medical: event.emergencyContact.medical || "",
@@ -51,7 +58,7 @@ export default function Contact({ step, setStep }: StepProps) {
   /** Phone number validation helper */
   const isValidPhoneNumber = (phone: string): boolean => {
     // Remove spaces and special characters for validation
-    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+    const cleanPhone = phone.replace(/[\s\-\(\)]/g, "");
     // Check if it's a valid phone number (10-15 digits, optionally starting with +)
     return /^\+?\d{10,15}$/.test(cleanPhone);
   };
@@ -86,21 +93,18 @@ export default function Contact({ step, setStep }: StepProps) {
   };
 
   /** Handle form submission */
-  const handlePublishEvent = async() => {
+  // 2. PUBLISH EVENT
+  const handlePublishEvent = async () => {
     startLoading();
-    // Reset previous errors
     setSubmitError("");
 
-    // Validate form
     if (!validateForm()) {
       setSubmitError("Please fill in all required fields correctly");
-      // Scroll to top to show errors
       window.scrollTo({ top: 0, behavior: "smooth" });
       stopLoading();
       return;
     }
 
-    // Check if eventId exists
     if (!eventId.trim()) {
       setSubmitError("Event ID not found. Please start from the beginning.");
       stopLoading();
@@ -116,18 +120,19 @@ export default function Contact({ step, setStep }: StepProps) {
           security: security.trim(),
           medical: medical.trim(),
           lostButFound: lostFound.trim(),
-          supportingInfo: supportingInfo.trim()
+          supportingInfo: supportingInfo.trim(),
         },
-        published: true
+        published: true,
       };
 
-      console.log("Publishing event with data:", data); // Debug log
+      console.log("Publishing event with data:", data);
 
       const res = await EditEventAction(data, eventId);
 
-      if (!res.success) {
-        setSubmitError(res.message || "Failed to publish event");
-        console.log("res==", res.message);
+      // ✅ Check for error using 'in' operator
+      if ("error" in res) {
+        setSubmitError(res.error);
+        console.log("Error:", res.error);
         return;
       }
 
@@ -149,7 +154,9 @@ export default function Contact({ step, setStep }: StepProps) {
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-lg sm:text-xl font-semibold">EMERGENCY CONTACT</h2>
-        <p className="text-xs text-gray-500 mt-1">Emergency contact for assistance during this event</p>
+        <p className="text-xs text-gray-500 mt-1">
+          Emergency contact for assistance during this event
+        </p>
       </div>
 
       {/* Global Error Message */}
@@ -170,8 +177,8 @@ export default function Contact({ step, setStep }: StepProps) {
             type="tel"
             value={security}
             onChange={(e) => {
-              setField('security', e.target.value);
-              setErrors(prev => ({ ...prev, security: undefined }));
+              setField("security", e.target.value);
+              setErrors((prev) => ({ ...prev, security: undefined }));
             }}
             placeholder="+234 901 234 5678"
             className={`w-full bg-transparent border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-gray-600 ${
@@ -192,8 +199,8 @@ export default function Contact({ step, setStep }: StepProps) {
             type="tel"
             value={medical}
             onChange={(e) => {
-              setField('medical', e.target.value);
-              setErrors(prev => ({ ...prev, medical: undefined }));
+              setField("medical", e.target.value);
+              setErrors((prev) => ({ ...prev, medical: undefined }));
             }}
             placeholder="+234 901 234 5678"
             className={`w-full bg-transparent border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-gray-600 ${
@@ -214,8 +221,8 @@ export default function Contact({ step, setStep }: StepProps) {
             type="text"
             value={lostFound}
             onChange={(e) => {
-              setField('lostFound', e.target.value);
-              setErrors(prev => ({ ...prev, lostFound: undefined }));
+              setField("lostFound", e.target.value);
+              setErrors((prev) => ({ ...prev, lostFound: undefined }));
             }}
             placeholder="Phone no. or location"
             className={`w-full bg-transparent border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-gray-600 ${
@@ -231,17 +238,20 @@ export default function Contact({ step, setStep }: StepProps) {
       {/* Supporting Information */}
       <div className="mb-6">
         <label className="block text-sm mb-2">
-          Supporting information <span className="text-gray-500 text-xs">(Optional)</span>
+          Supporting information{" "}
+          <span className="text-gray-500 text-xs">(Optional)</span>
         </label>
         <textarea
           value={supportingInfo}
-          onChange={(e) => setField('supportingInfo', e.target.value)}
+          onChange={(e) => setField("supportingInfo", e.target.value)}
           placeholder="Additional emergency information or instructions..."
           rows={6}
           maxLength={100}
           className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-gray-600 resize-none"
         />
-        <p className="text-xs text-gray-500 mt-1">{supportingInfo.length}/100</p>
+        <p className="text-xs text-gray-500 mt-1">
+          {supportingInfo.length}/100
+        </p>
       </div>
 
       {/* Review Notice */}
@@ -252,14 +262,15 @@ export default function Contact({ step, setStep }: StepProps) {
             Ready to publish?
           </p>
           <p className="text-xs text-gray-400">
-            Make sure you've reviewed all sections. Once published, your event will be visible to attendees.
+            Make sure you've reviewed all sections. Once published, your event
+            will be visible to attendees.
           </p>
         </div>
       </div>
 
       {/* Navigation Buttons */}
       <div className="flex justify-end items-center gap-4">
-        <button 
+        <button
           onClick={() => setStep(step - 1)}
           disabled={isSubmitting}
           className="flex items-center gap-2 text-white border border-[#CCA33A] px-6 py-3 rounded-full font-semibold hover:bg-[#CCA33A]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -267,7 +278,7 @@ export default function Contact({ step, setStep }: StepProps) {
           <IoArrowBack />
           Previous
         </button>
-        <button 
+        <button
           onClick={handlePublishEvent}
           disabled={isSubmitting}
           className={`px-8 py-3 rounded-full font-semibold transition-colors flex items-center gap-2 ${
@@ -287,5 +298,5 @@ export default function Contact({ step, setStep }: StepProps) {
         </button>
       </div>
     </div>
-  )
+  );
 }

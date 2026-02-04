@@ -450,42 +450,46 @@ function SalesAndTransactionsContent() {
   ];
 
   useEffect(() => {
-    fetchTransactions(currentPage);
-  }, [currentPage]);
+  fetchTransactions(currentPage);
+}, [currentPage]);
 
-  const fetchTransactions = async (page: number) => {
-    setIsLoading(true);
-    setError("");
+const fetchTransactions = async (page: number) => {
+  setIsLoading(true);
+  setError("");
 
-    try {
-      const response = await getAllTransactions(page);
+  try {
+    const response = await getAllTransactions(page);
 
-      if (response && response.success && Array.isArray(response.data)) {
-        const processedTransactions = processTransactionsFromAPI(response.data);
-        
-        setAllTransactions(processedTransactions);
-        
-        if (response.pagination) {
-          setPagination(response.pagination);
-        }
-        
-        setError("");
-      } else {
-        setError(response?.message || "Failed to fetch transactions");
-        setAllTransactions([]);
-      }
-    } catch (err) {
-      console.error("Error fetching transactions:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred while fetching transactions"
-      );
+    // ✅ Check for error using 'in' operator
+    if ('error' in response) {
+      setError(response.error);
       setAllTransactions([]);
-    } finally {
-      setIsLoading(false);
+    } else if (Array.isArray(response.data)) {
+      const processedTransactions = processTransactionsFromAPI(response.data);
+      
+      setAllTransactions(processedTransactions);
+      
+      if (response.pagination) {
+        setPagination(response.pagination);
+      }
+      
+      setError("");
+    } else {
+      setError("Invalid response format");
+      setAllTransactions([]);
     }
-  };
+  } catch (err) {
+    console.error("Error fetching transactions:", err);
+    setError(
+      err instanceof Error
+        ? err.message
+        : "An error occurred while fetching transactions"
+    );
+    setAllTransactions([]);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const filteredTransactions = useMemo(() => {
     let result = allTransactions;

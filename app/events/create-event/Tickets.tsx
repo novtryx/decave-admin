@@ -152,64 +152,62 @@ export default function Tickets({ step, setStep }: StepProps) {
 
   /** Handle form submission */
   const handleSaveTicket = async () => {
-    startLoading();
-    // Reset previous errors
-    setSubmitError("");
+  startLoading();
+  setSubmitError("");
 
-    // Validate form
-    if (!validateForm()) {
-      setSubmitError("Please fill in all required fields correctly");
-      // Scroll to top to show errors
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      stopLoading();
+  if (!validateForm()) {
+    setSubmitError("Please fill in all required fields correctly");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    stopLoading();
+    return;
+  }
+
+  if (!eventId.trim()) {
+    setSubmitError("Event ID not found. Please start from the beginning.");
+    stopLoading();
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    const data = {
+      stage: step,
+      tickets: tickets.map((ticket) => ({
+        ticketName: ticket.ticketName.trim(),
+        price: Number(ticket.price),
+        currency: "NGN",
+        initialQuantity: Number(ticket.quantity),
+        availableQuantity: Number(ticket.quantity),
+        benefits: ticket.benefits
+          .map((benefit) => benefit.text.trim())
+          .filter((text) => text !== ""),
+      })),
+    };
+
+    console.log("Saving tickets data:", data);
+
+    const res = await EditEventAction(data, eventId);
+
+    // ✅ Check for error using 'in' operator
+    if ('error' in res) {
+      setSubmitError(res.error);
+      console.log("Error:", res.error);
       return;
     }
 
-    // Check if eventId exists
-    if (!eventId.trim()) {
-      setSubmitError("Event ID not found. Please start from the beginning.");
-      stopLoading();
-      return;
-    }
+    setStep(step + 1);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred";
+    setSubmitError(errorMessage);
+    console.error("Error saving tickets:", error);
+  } finally {
+    setIsSubmitting(false);
+    stopLoading();
+  }
+};
 
-    setIsSubmitting(true);
-
-    try {
-      const data = {
-        stage: step,
-        tickets: tickets.map((ticket) => ({
-          ticketName: ticket.ticketName.trim(),
-          price: Number(ticket.price),
-          currency: "NGN",
-          initialQuantity: Number(ticket.quantity),
-          availableQuantity: Number(ticket.quantity),
-          benefits: ticket.benefits
-            .map((benefit) => benefit.text.trim())
-            .filter((text) => text !== ""), // Filter out empty benefits
-        })),
-      };
-
-      console.log("Saving tickets data:", data); // Debug log
-
-      const res = await EditEventAction(data, eventId);
-
-      if (!res.success) {
-        setSubmitError(res.message || "Failed to save tickets");
-        console.log("ress==", res.message);
-        return;
-      }
-
-      setStep(step + 1);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An unexpected error occurred";
-      setSubmitError(errorMessage);
-      console.error("Error saving tickets:", error);
-    } finally {
-      setIsSubmitting(false);
-      stopLoading();
-    }
-  };
 
   /** Get ticket index for error handling */
   const getTicketIndex = (ticketId: number) => {

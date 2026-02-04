@@ -155,26 +155,28 @@ export default function PartnerSponsorSection({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchPartners() {
-      try {
-        setLoading(true);
-        const response = await getAllPartners();
-        
-        if (response.success && response.data) {
-          setPartners(response.data);
-        } else {
-          setError(response.message || "Failed to fetch partners");
-        }
-      } catch (err) {
-        setError("An error occurred while fetching partners");
-        console.error(err);
-      } finally {
-        setLoading(false);
+  async function fetchPartners() {
+    try {
+      setLoading(true);
+      const response = await getAllPartners();
+      
+      // ✅ Check for error using 'in' operator
+      if ('error' in response) {
+        setError(response.error);
+      } else {
+        setPartners(response.data);
       }
+    } catch (err) {
+      setError("An error occurred while fetching partners");
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    fetchPartners();
-  }, []);
+  fetchPartners();
+}, []);
+
 
   // Filter partners based on search and tier
   const filteredPartners = partners.filter((partner) => {

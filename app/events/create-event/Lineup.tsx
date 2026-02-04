@@ -611,79 +611,76 @@ export default function Lineup({ step, setStep }: StepProps) {
   };
 
   /** Handle form submission */
-  const handleSaveHeadliner = async () => {
-    // Reset previous errors
-    setSubmitError("");
+ // 4. SAVE HEADLINER
+const handleSaveHeadliner = async () => {
+  setSubmitError("");
 
-    // Validate form
-    if (!validateForm()) {
-      setSubmitError("Please fill in all required fields correctly");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
-    // Check if eventId exists
-    if (!eventId || eventId.trim() === "") {
-      setSubmitError("Event ID not found. Please save basic event details first.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Prepare payload
-      const payload = {
-        stage: step,
-        artistLineUp: artists.map((artist) => {
-          // Ensure all required fields are present and properly formatted
-          if (!artist.imageUrl || !artist.name || !artist.role) {
-            throw new Error("Missing required artist information");
-          }
-
-          return {
-            artistImage: artist.imageUrl.trim(),
-            artistName: artist.name.trim(),
-            artistGenre: artist.role.trim(),
-            headliner: Boolean(artist.isHeadliner),
-            socials: {
-              instgram: (artist.instagram || "").trim(),
-              twitter: (artist.twitter || "").trim(),
-              website: (artist.website || "").trim()
-            }
-          };
-        })
-      };
-
-      console.log("Saving lineup data:", payload);
-
-      const res = await EditEventAction(payload, eventId);
-
-      if (!res.success) {
-        throw new Error(res.message || "Failed to save artist lineup");
-      }
-
-      // Success - move to next step
-      setStep(step + 1);
-      
-    } catch (error) {
-      console.error("Error saving lineup:", error);
-      
-      // Extract clean error message
-      let errorMessage = "An unexpected error occurred while saving the lineup";
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      }
-
-      setSubmitError(errorMessage);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      
-    } finally {
-      setIsSubmitting(false);
-    }
+  if (!validateForm()) {
+    setSubmitError("Please fill in all required fields correctly");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
   }
+
+  if (!eventId || eventId.trim() === "") {
+    setSubmitError("Event ID not found. Please save basic event details first.");
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    const payload = {
+      stage: step,
+      artistLineUp: artists.map((artist) => {
+        if (!artist.imageUrl || !artist.name || !artist.role) {
+          throw new Error("Missing required artist information");
+        }
+
+        return {
+          artistImage: artist.imageUrl.trim(),
+          artistName: artist.name.trim(),
+          artistGenre: artist.role.trim(),
+          headliner: Boolean(artist.isHeadliner),
+          socials: {
+            instgram: (artist.instagram || "").trim(),
+            twitter: (artist.twitter || "").trim(),
+            website: (artist.website || "").trim(),
+          },
+        };
+      }),
+    };
+
+    console.log("Saving lineup data:", payload);
+
+    const res = await EditEventAction(payload, eventId);
+
+    // ✅ Check for error using 'in' operator
+    if ('error' in res) {
+      setSubmitError(res.error);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    // Success - move to next step
+    setStep(step + 1);
+  } catch (error) {
+    console.error("Error saving lineup:", error);
+
+    let errorMessage = "An unexpected error occurred while saving the lineup";
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === "string") {
+      errorMessage = error;
+    }
+
+    setSubmitError(errorMessage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   return (
     <div className="text-white">

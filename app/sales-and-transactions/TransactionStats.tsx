@@ -24,30 +24,36 @@ export default function TransactionStats() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchStats() {
-      try {
-        setLoading(true);
-        // Just fetch page 1 - we only need the stats object, not all transactions
-        const response = await getAllTransactions(1, 10);
+  async function fetchStats() {
+    try {
+      setLoading(true);
+      // Just fetch page 1 - we only need the stats object, not all transactions
+      const response = await getAllTransactions(1, 10);
 
-        if (response && response.success && response.stats) {
-          // Use the stats object directly from the API response
-          setStats({
-            totalRevenue: response.stats.totalRevenue || 0,
-            completedCount: response.stats.totalCompleted || 0,
-            pendingCount: response.stats.totalPending || 0,
-            failedCount: response.stats.totalFailed || 0,
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching transaction stats:", err);
-      } finally {
-        setLoading(false);
+      // ✅ Check for error using 'in' operator
+      if ('error' in response) {
+        console.error("Error fetching transaction stats:", response.error);
+        return;
       }
-    }
 
-    fetchStats();
-  }, []);
+      if (response.stats) {
+        // Use the stats object directly from the API response
+        setStats({
+          totalRevenue: response.stats.totalRevenue || 0,
+          completedCount: response.stats.totalCompleted || 0,
+          pendingCount: response.stats.totalPending || 0,
+          failedCount: response.stats.totalFailed || 0,
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching transaction stats:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchStats();
+}, []);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {

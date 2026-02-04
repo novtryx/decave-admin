@@ -156,27 +156,28 @@ export default function Events() {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchAllEvents = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const res = await getAllEvents();
-        
-        if (res.success && res.data) {
-          setEventData(res.data);
-        } else {
-          setError(res.message || "Failed to fetch events");
-        }
-      } catch (err) {
-        setError("An error occurred while fetching events");
-        console.error("Error fetching events:", err);
-      } finally {
-        setIsLoading(false);
+  const fetchAllEvents = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await getAllEvents();
+      
+      // ✅ Check for error using 'in' operator
+      if ('error' in res) {
+        setError(res.error);
+      } else {
+        setEventData(res.data);
       }
-    };
+    } catch (err) {
+      setError("An error occurred while fetching events");
+      console.error("Error fetching events:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchAllEvents();
-  }, []);
+  fetchAllEvents();
+}, []);
 
   const sortOptions = [
     { label: "All", value: "all" },

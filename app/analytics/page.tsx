@@ -32,102 +32,201 @@ const Analytics: React.FC = () => {
   const [data, setData] = useState<UIAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // useEffect(() => {
+  //   async function fetchAnalytics() {
+  //     setLoading(true);
+  //     const res = await getAnalytics();
+
+  //     if (!res?.success) {
+  //       setLoading(false);
+  //       return;
+  //     }
+
+  //     const analytics = res.data;
+  //     const isMonthly = period === "Monthly";
+
+  //     /* Revenue & Tickets Trend */
+  //     const revenueTrend = Object.entries(
+  //       isMonthly ? analytics.monthRevenue : analytics.yearRevenue,
+  //     ).map(([key, value]) => ({
+  //       month: key,
+  //       value,
+  //     }));
+
+  //     const ticketsTrend = Object.entries(
+  //       isMonthly ? analytics.monthTickets : analytics.yearTickets,
+  //     ).map(([key, value]) => ({
+  //       month: key,
+  //       value,
+  //     }));
+
+  //     /* Event Performance */
+  //     const eventPerformanceMap = new Map<string, number>();
+
+  //     analytics.ticketSalesDetails.forEach((item) => {
+  //       eventPerformanceMap.set(
+  //         item.eventTitle,
+  //         (eventPerformanceMap.get(item.eventTitle) || 0) + item.ticketsSold,
+  //       );
+  //     });
+
+  //     const eventPerformance = Array.from(eventPerformanceMap.entries()).map(
+  //       ([name, value]) => ({ name, value }),
+  //     );
+
+  //     /* Stats Cards */
+  //     const stats: UIAnalyticsData["stats"] = {
+  //       revenue: {
+  //         value: formatCurrency(
+  //           isMonthly
+  //             ? analytics.revenueThisMonth.value
+  //             : analytics.revenueThisYear.value,
+  //         ),
+  //         change: formatChange(
+  //           isMonthly
+  //             ? analytics.revenueThisMonth.changePercent
+  //             : analytics.revenueThisYear.changePercent,
+  //         ),
+  //       },
+  //       ticketsSold: {
+  //         value: (isMonthly
+  //           ? analytics.ticketsThisMonth.value
+  //           : analytics.ticketsThisYear.value
+  //         ).toLocaleString(),
+  //         change: formatChange(
+  //           isMonthly
+  //             ? analytics.ticketsThisMonth.changePercent
+  //             : analytics.ticketsThisYear.changePercent,
+  //         ),
+  //       },
+  //       conversionRate: {
+  //         value: `${(isMonthly
+  //           ? analytics.conversionThisMonth.value
+  //           : analytics.conversionThisYear.value
+  //         ).toFixed(2)}%`,
+  //         change: formatChange(
+  //           isMonthly
+  //             ? analytics.conversionThisMonth.changePercent
+  //             : analytics.conversionThisYear.changePercent,
+  //         ),
+  //       },
+  //       eventsPublished: {
+  //         value: analytics.totalPublishedEvents.toString(),
+  //         change: "",
+  //       },
+  //     };
+
+  //     setData({
+  //       stats,
+  //       revenueTrend,
+  //       ticketsSold: ticketsTrend,
+  //       eventPerformance,
+  //     });
+
+  //     setLoading(false);
+  //   }
+
+  //   fetchAnalytics();
+  // }, [period]);
   useEffect(() => {
-    async function fetchAnalytics() {
-      setLoading(true);
-      const res = await getAnalytics();
+  async function fetchAnalytics() {
+    setLoading(true);
+    const res = await getAnalytics();
 
-      if (!res?.success) {
-        setLoading(false);
-        return;
-      }
-
-      const analytics = res.data;
-      const isMonthly = period === "Monthly";
-
-      /* Revenue & Tickets Trend */
-      const revenueTrend = Object.entries(
-        isMonthly ? analytics.monthRevenue : analytics.yearRevenue,
-      ).map(([key, value]) => ({
-        month: key,
-        value,
-      }));
-
-      const ticketsTrend = Object.entries(
-        isMonthly ? analytics.monthTickets : analytics.yearTickets,
-      ).map(([key, value]) => ({
-        month: key,
-        value,
-      }));
-
-      /* Event Performance */
-      const eventPerformanceMap = new Map<string, number>();
-
-      analytics.ticketSalesDetails.forEach((item) => {
-        eventPerformanceMap.set(
-          item.eventTitle,
-          (eventPerformanceMap.get(item.eventTitle) || 0) + item.ticketsSold,
-        );
-      });
-
-      const eventPerformance = Array.from(eventPerformanceMap.entries()).map(
-        ([name, value]) => ({ name, value }),
-      );
-
-      /* Stats Cards */
-      const stats: UIAnalyticsData["stats"] = {
-        revenue: {
-          value: formatCurrency(
-            isMonthly
-              ? analytics.revenueThisMonth.value
-              : analytics.revenueThisYear.value,
-          ),
-          change: formatChange(
-            isMonthly
-              ? analytics.revenueThisMonth.changePercent
-              : analytics.revenueThisYear.changePercent,
-          ),
-        },
-        ticketsSold: {
-          value: (isMonthly
-            ? analytics.ticketsThisMonth.value
-            : analytics.ticketsThisYear.value
-          ).toLocaleString(),
-          change: formatChange(
-            isMonthly
-              ? analytics.ticketsThisMonth.changePercent
-              : analytics.ticketsThisYear.changePercent,
-          ),
-        },
-        conversionRate: {
-          value: `${(isMonthly
-            ? analytics.conversionThisMonth.value
-            : analytics.conversionThisYear.value
-          ).toFixed(2)}%`,
-          change: formatChange(
-            isMonthly
-              ? analytics.conversionThisMonth.changePercent
-              : analytics.conversionThisYear.changePercent,
-          ),
-        },
-        eventsPublished: {
-          value: analytics.totalPublishedEvents.toString(),
-          change: "",
-        },
-      };
-
-      setData({
-        stats,
-        revenueTrend,
-        ticketsSold: ticketsTrend,
-        eventPerformance,
-      });
-
+    // ✅ Check for error using 'in' operator
+    if ('error' in res) {
+      console.error("Analytics error:", res.error);
       setLoading(false);
+      return;
     }
 
-    fetchAnalytics();
-  }, [period]);
+    // ✅ Now TypeScript knows res is AnalyticsResponse
+    const analytics = res.data;
+    const isMonthly = period === "Monthly";
+
+    /* Revenue & Tickets Trend */
+    const revenueTrend = Object.entries(
+      isMonthly ? analytics.monthRevenue : analytics.yearRevenue,
+    ).map(([key, value]) => ({
+      month: key,
+      value,
+    }));
+
+    const ticketsTrend = Object.entries(
+      isMonthly ? analytics.monthTickets : analytics.yearTickets,
+    ).map(([key, value]) => ({
+      month: key,
+      value,
+    }));
+
+    /* Event Performance */
+    const eventPerformanceMap = new Map<string, number>();
+
+    analytics.ticketSalesDetails.forEach((item) => {
+      eventPerformanceMap.set(
+        item.eventTitle,
+        (eventPerformanceMap.get(item.eventTitle) || 0) + item.ticketsSold,
+      );
+    });
+
+    const eventPerformance = Array.from(eventPerformanceMap.entries()).map(
+      ([name, value]) => ({ name, value }),
+    );
+
+    /* Stats Cards */
+    const stats: UIAnalyticsData["stats"] = {
+      revenue: {
+        value: formatCurrency(
+          isMonthly
+            ? analytics.revenueThisMonth.value
+            : analytics.revenueThisYear.value,
+        ),
+        change: formatChange(
+          isMonthly
+            ? analytics.revenueThisMonth.changePercent
+            : analytics.revenueThisYear.changePercent,
+        ),
+      },
+      ticketsSold: {
+        value: (isMonthly
+          ? analytics.ticketsThisMonth.value
+          : analytics.ticketsThisYear.value
+        ).toLocaleString(),
+        change: formatChange(
+          isMonthly
+            ? analytics.ticketsThisMonth.changePercent
+            : analytics.ticketsThisYear.changePercent,
+        ),
+      },
+      conversionRate: {
+        value: `${(isMonthly
+          ? analytics.conversionThisMonth.value
+          : analytics.conversionThisYear.value
+        ).toFixed(2)}%`,
+        change: formatChange(
+          isMonthly
+            ? analytics.conversionThisMonth.changePercent
+            : analytics.conversionThisYear.changePercent,
+        ),
+      },
+      eventsPublished: {
+        value: analytics.totalPublishedEvents.toString(),
+        change: "",
+      },
+    };
+
+    setData({
+      stats,
+      revenueTrend,
+      ticketsSold: ticketsTrend,
+      eventPerformance,
+    });
+
+    setLoading(false);
+  }
+
+  fetchAnalytics();
+}, [period]);
 
   return (
     <DashboardLayout>

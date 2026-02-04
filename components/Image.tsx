@@ -57,57 +57,61 @@ export default function ImageUpload({
 
   // Process and validate file
   const processFile = async (file: File) => {
-    // Validate file size
-    if (file.size > maxSize * 1024 * 1024) {
-      setUploadError(`File size must be less than ${maxSize}MB`);
-      return;
+  // Validate file size
+  if (file.size > maxSize * 1024 * 1024) {
+    setUploadError(`File size must be less than ${maxSize}MB`);
+    return;
+  }
+
+  // Validate file type
+  const acceptedTypes = accept.split(",").map(type => type.trim());
+  const isValidType = acceptedTypes.some(type => {
+    if (type.startsWith(".")) {
+      return file.name.toLowerCase().endsWith(type);
     }
+    return file.type === type;
+  });
 
-    // Validate file type
-    const acceptedTypes = accept.split(',').map(type => type.trim());
-    const fileType = file.type;
-    const isValidType = acceptedTypes.some(type => {
-      if (type.startsWith('.')) {
-        return file.name.toLowerCase().endsWith(type);
-      }
-      return fileType === type;
-    });
+  if (!isValidType) {
+    setUploadError(`Please upload a valid file type: ${helperText}`);
+    return;
+  }
 
-    if (!isValidType) {
-      setUploadError(`Please upload a valid file type: ${helperText}`);
-      return;
-    }
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    // Upload to server
-    setIsUploading(true);
-    setUploadError('');
-
-    try {
-      const res = await uploadImage(file);
-      console.log("image===", res);
-
-      if (res.success && res.data) {
-        onUploadComplete?.(res.data);
-      } else {
-        setUploadError(res.message || 'Upload failed');
-        setPreview(null);
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Upload failed. Please try again.';
-      setUploadError(errorMessage);
-      setPreview(null);
-      console.error('Upload error:', err);
-    } finally {
-      setIsUploading(false);
-    }
+  // Create preview
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setPreview(reader.result as string);
   };
+  reader.readAsDataURL(file);
+
+  // Upload
+  setIsUploading(true);
+  setUploadError("");
+
+  try {
+    const res = await uploadImage(file);
+    console.log("image===", res);
+
+    // 🔑 Narrow the union
+    if (typeof res === "string") {
+      // success case → res is the image URL
+      onUploadComplete?.(res);
+    } else if ("error" in res) {
+  // error
+  setUploadError(res.error || "Upload failed");
+  setPreview(null);
+}
+  } catch (err) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Upload failed. Please try again.";
+    setUploadError(errorMessage);
+    setPreview(null);
+    console.error("Upload error:", err);
+  } finally {
+    setIsUploading(false);
+  }
+};
+
 
   // Handle drag events
   const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {

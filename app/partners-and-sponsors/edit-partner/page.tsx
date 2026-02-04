@@ -1,36 +1,40 @@
-"use client"
+"use client";
 
-import { DashboardLayout } from "@/components/DashboardLayout"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { FaArrowLeftLong } from "react-icons/fa6"
-import { IoImageOutline, IoCalendarOutline, IoChevronDown, IoCheckmark } from "react-icons/io5"
-import { LuSave } from "react-icons/lu"
-import { createPartner } from "@/app/actions/partners"
-import SuccessModal from "@/components/SuccessModal"
+import { DashboardLayout } from "@/components/DashboardLayout";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { FaArrowLeftLong } from "react-icons/fa6";
+import {
+  IoImageOutline,
+  IoCalendarOutline,
+  IoChevronDown,
+  IoCheckmark,
+} from "react-icons/io5";
+import { LuSave } from "react-icons/lu";
+import { createPartner } from "@/app/actions/partners";
+import SuccessModal from "@/components/SuccessModal";
 // import { uploadImage } from "@/app/actions/image-upload"
-import { uploadImageClient } from "@/utils/upload-image"
-
+import { uploadImageClient } from "@/utils/upload-image";
 
 export default function EditPartner() {
-  const [partnerName, setPartnerName] = useState("")
-  const [logo, setLogo] = useState<File | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string>("")
-  const [logoUrl, setLogoUrl] = useState<string>("")
-  const [contactPerson, setContactPerson] = useState("")
-  const [contactEmail, setContactEmail] = useState("")
-  const [contactPhone, setContactPhone] = useState("")
-  const [sponsorshipTier, setSponsorshipTier] = useState("")
-  const [selectedEvents, setSelectedEvents] = useState<string[]>([])
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
-  const [internalNotes, setInternalNotes] = useState("")
-  const [showOnWebsite, setShowOnWebsite] = useState(true)
-  const [featureOnPage, setFeatureOnPage] = useState(true)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
+  const [partnerName, setPartnerName] = useState("");
+  const [logo, setLogo] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>("");
+  const [logoUrl, setLogoUrl] = useState<string>("");
+  const [contactPerson, setContactPerson] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [sponsorshipTier, setSponsorshipTier] = useState("");
+  const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [internalNotes, setInternalNotes] = useState("");
+  const [showOnWebsite, setShowOnWebsite] = useState(true);
+  const [featureOnPage, setFeatureOnPage] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const router = useRouter();
 
@@ -40,78 +44,78 @@ export default function EditPartner() {
     "Bass Revolution",
     "Summer Vibes Festival",
     "Jungle Takeover",
-    "Others"
-  ]
+    "Others",
+  ];
 
   const toggleEvent = (event: string) => {
     if (selectedEvents.includes(event)) {
-      setSelectedEvents(selectedEvents.filter(e => e !== event))
+      setSelectedEvents(selectedEvents.filter((e) => e !== event));
     } else {
-      setSelectedEvents([...selectedEvents, event])
+      setSelectedEvents([...selectedEvents, event]);
     }
-  }
-const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  if (!e.target.files?.[0]) return;
-  const file = e.target.files[0];
+  };
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0]) return;
+    const file = e.target.files[0];
 
-  setIsUploadingLogo(true);
-  try {
-    const url = await uploadImageClient(file); // client-side fetch
-    setLogoUrl(url);
-    console.log("Logo uploaded:", url);
-  } catch (error) {
-    console.error(error);
-    setErrorMessage(error instanceof Error ? error.message : "Upload failed");
-  } finally {
-    setIsUploadingLogo(false);
-  }
-};
+    setIsUploadingLogo(true);
+    try {
+      const url = await uploadImageClient(file); // client-side fetch
+      setLogoUrl(url);
+      console.log("Logo uploaded:", url);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(error instanceof Error ? error.message : "Upload failed");
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
 
   const validateForm = () => {
     if (!partnerName.trim()) {
-      setErrorMessage("Partner name is required")
-      return false
+      setErrorMessage("Partner name is required");
+      return false;
     }
     if (!logoUrl) {
-      setErrorMessage("Brand logo is required")
-      return false
+      setErrorMessage("Brand logo is required");
+      return false;
     }
     if (!contactPerson.trim()) {
-      setErrorMessage("Contact person is required")
-      return false
+      setErrorMessage("Contact person is required");
+      return false;
     }
     if (!contactEmail.trim()) {
-      setErrorMessage("Contact email is required")
-      return false
+      setErrorMessage("Contact email is required");
+      return false;
     }
     if (!contactPhone.trim()) {
-      setErrorMessage("Contact phone is required")
-      return false
+      setErrorMessage("Contact phone is required");
+      return false;
     }
     if (!sponsorshipTier) {
-      setErrorMessage("Sponsorship tier is required")
-      return false
+      setErrorMessage("Sponsorship tier is required");
+      return false;
     }
     if (selectedEvents.length === 0) {
-      setErrorMessage("Please select at least one event")
-      return false
+      setErrorMessage("Please select at least one event");
+      return false;
     }
     if (!startDate.trim()) {
-      setErrorMessage("Partnership start date is required")
-      return false
+      setErrorMessage("Partnership start date is required");
+      return false;
     }
     if (!endDate.trim()) {
-      setErrorMessage("Partnership end date is required")
-      return false
+      setErrorMessage("Partnership end date is required");
+      return false;
     }
-    setErrorMessage("")
-    return true
-  }
+    setErrorMessage("");
+    return true;
+  };
 
   const handleSaveAndPublish = async () => {
-    if (!validateForm()) return
+    if (!validateForm()) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       // Prepare partner data with the uploaded logo URL
@@ -121,40 +125,45 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         contactPerson,
         contactEmail,
         contactPhone,
-        sponsorshipTier: sponsorshipTier as "platinum" | "gold" | "silver" | "bronze",
+        sponsorshipTier: sponsorshipTier as
+          | "platinum"
+          | "gold"
+          | "silver"
+          | "bronze",
         associatedEvents: selectedEvents,
         partnershipStartDate: startDate,
         partnershipEndDate: endDate,
         internalNotes: internalNotes || undefined,
         visibilityControl: {
           publicWebsite: showOnWebsite,
-          partnershipPage: featureOnPage
-        }
-      }
+          partnershipPage: featureOnPage,
+        },
+      };
 
       // Create partner
-      const response = await createPartner(partnerData)
+      const response = await createPartner(partnerData);
 
-      if (response.success) {
-        setShowSuccessModal(true)
+      // ✅ Check for error using 'in' operator
+      if ("error" in response) {
+        setErrorMessage(response.error);
+      } else {
+        setShowSuccessModal(true);
         // Redirect after modal closes
         setTimeout(() => {
-          router.push("/dashboard/partners")
-        }, 3000)
-      } else {
-        setErrorMessage(response.message || "Failed to edit partner")
+          router.push("/dashboard/partners");
+        }, 3000);
       }
     } catch (error) {
-      console.error('Error edit partner:', error)
-      setErrorMessage("An error occurred while editing the partner")
+      console.error("Error creating partner:", error);
+      setErrorMessage("An error occurred while creating the partner");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleCancel = () => {
-    router.back()
-  }
+    router.back();
+  };
 
   return (
     <DashboardLayout>
@@ -181,7 +190,7 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
         {/* Action Buttons */}
         <div className="flex flex-col lg:flex-row gap-4 w-full lg:w-fit items-center">
-          <button 
+          <button
             onClick={handleSaveAndPublish}
             disabled={isLoading || isUploadingLogo}
             className="border-2 border-[#cca33a] w-full lg:w-fit py-2 px-6 rounded-full text-sm text-[#cca33a] flex justify-center gap-2 items-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#cca33a] hover:text-black transition-colors"
@@ -189,7 +198,7 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             <LuSave />
             {isLoading ? "Saving..." : "Save Changes"}
           </button>
-          <button 
+          <button
             onClick={handleCancel}
             disabled={isLoading}
             className="hover:bg-red-50 py-2 px-6 w-full lg:w-fit rounded-full text-sm text-red-600 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
@@ -207,7 +216,9 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       )}
 
       {/* PARTNERSHIP INFORMATION */}
-      <h2 className="text-lg sm:text-xl font-semibold mb-6">PARTNERSHIP INFORMATION</h2>
+      <h2 className="text-lg sm:text-xl font-semibold mb-6">
+        PARTNERSHIP INFORMATION
+      </h2>
 
       {/* Partner/Brand Name */}
       <div className="mb-6">
@@ -237,7 +248,10 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             id="logo-upload"
             disabled={isUploadingLogo}
           />
-          <label htmlFor="logo-upload" className="cursor-pointer text-center w-full h-full flex items-center justify-center">
+          <label
+            htmlFor="logo-upload"
+            className="cursor-pointer text-center w-full h-full flex items-center justify-center"
+          >
             {isUploadingLogo ? (
               <div className="flex flex-col items-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#CCA33A] mb-2"></div>
@@ -245,16 +259,25 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               </div>
             ) : logoPreview ? (
               <div className="flex flex-col items-center">
-                <img src={logoPreview} alt="Logo preview" className="h-20 object-contain mx-auto" />
-                <p className="text-xs text-green-500 mt-1">✓ Uploaded successfully</p>
+                <img
+                  src={logoPreview}
+                  alt="Logo preview"
+                  className="h-20 object-contain mx-auto"
+                />
+                <p className="text-xs text-green-500 mt-1">
+                  ✓ Uploaded successfully
+                </p>
               </div>
             ) : (
               <div className="flex flex-col items-center">
                 <IoImageOutline className="text-3xl text-gray-600 mb-2" />
                 <p className="text-xs">
-                  <span className="text-[#CCA33A]">Click to upload</span> or drag and drop
+                  <span className="text-[#CCA33A]">Click to upload</span> or
+                  drag and drop
                 </p>
-                <p className="text-xs text-gray-600 mt-1">PNG, JPG or SVG (Max 2MB)</p>
+                <p className="text-xs text-gray-600 mt-1">
+                  PNG, JPG or SVG (Max 2MB)
+                </p>
               </div>
             )}
           </label>
@@ -307,7 +330,9 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       </div>
 
       {/* SPONSORSHIP DETAILS */}
-      <h2 className="text-lg sm:text-xl font-semibold mb-6">SPONSORSHIP DETAILS</h2>
+      <h2 className="text-lg sm:text-xl font-semibold mb-6">
+        SPONSORSHIP DETAILS
+      </h2>
 
       {/* Sponsorship Tier */}
       <div className="mb-6">
@@ -320,11 +345,21 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             onChange={(e) => setSponsorshipTier(e.target.value)}
             className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm appearance-none cursor-pointer focus:outline-none focus:border-gray-600"
           >
-            <option value="" className="bg-gray-900">Select Tier</option>
-            <option value="platinum" className="bg-gray-900">Platinum</option>
-            <option value="gold" className="bg-gray-900">Gold</option>
-            <option value="silver" className="bg-gray-900">Silver</option>
-            <option value="bronze" className="bg-gray-900">Bronze</option>
+            <option value="" className="bg-gray-900">
+              Select Tier
+            </option>
+            <option value="platinum" className="bg-gray-900">
+              Platinum
+            </option>
+            <option value="gold" className="bg-gray-900">
+              Gold
+            </option>
+            <option value="silver" className="bg-gray-900">
+              Silver
+            </option>
+            <option value="bronze" className="bg-gray-900">
+              Bronze
+            </option>
           </select>
           <IoChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         </div>
@@ -347,7 +382,9 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               }`}
             >
               {event}
-              {selectedEvents.includes(event) && <IoCheckmark className="text-base" />}
+              {selectedEvents.includes(event) && (
+                <IoCheckmark className="text-base" />
+              )}
             </button>
           ))}
         </div>
@@ -403,14 +440,20 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       </div>
 
       {/* VISIBILITY CONTROLS */}
-      <h2 className="text-lg sm:text-xl font-semibold mb-6">VISIBILITY CONTROLS</h2>
+      <h2 className="text-lg sm:text-xl font-semibold mb-6">
+        VISIBILITY CONTROLS
+      </h2>
 
       <div className="space-y-4">
         {/* Show Partner on Public Website */}
         <div className="bg-[#151515] border border-[#2a2a2a] rounded-lg p-4 sm:p-6 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">Show Partner on Public Website</p>
-            <p className="text-xs text-gray-500 mt-0.5">Display this partner in public-facing event pages</p>
+            <p className="text-sm font-medium">
+              Show Partner on Public Website
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Display this partner in public-facing event pages
+            </p>
           </div>
           <button
             onClick={() => setShowOnWebsite(!showOnWebsite)}
@@ -430,7 +473,9 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         <div className="bg-[#151515] border border-[#2a2a2a] rounded-lg p-4 sm:p-6 flex items-center justify-between">
           <div>
             <p className="text-sm font-medium">Feature on Partnership Page</p>
-            <p className="text-xs text-gray-500 mt-0.5">Highlight this partner on the dedicated partnerships page</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Highlight this partner on the dedicated partnerships page
+            </p>
           </div>
           <button
             onClick={() => setFeatureOnPage(!featureOnPage)}
@@ -447,5 +492,5 @@ const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         </div>
       </div>
     </DashboardLayout>
-  )
+  );
 }

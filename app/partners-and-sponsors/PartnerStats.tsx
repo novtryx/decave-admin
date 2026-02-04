@@ -24,44 +24,48 @@ export default function PartnerStats() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchStats() {
-      try {
-        setLoading(true);
-        const response = await getAllPartners();
-        
-        if (response.success && response.data) {
-          const partners = response.data;
-          
-          // Calculate stats
-          const totalPartners = partners.length;
-          const activePartners = partners.filter(
-            (p) => p.status
-          ).length;
-          const platinumTier = partners.filter(
-            (p) => p.sponsorshipTier.toLowerCase() === "platinum"
-          ).length;
-          
-          // Count total event associations (including duplicates across partners)
-          const totalEventAssociations = partners.reduce((total, partner) => {
-            return total + (partner.associatedEvents?.length || 0);
-          }, 0);
-
-          setStats({
-            totalPartners,
-            activePartners,
-            platinumTier,
-            totalEventAssociations,
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching partner stats:", err);
-      } finally {
-        setLoading(false);
+  async function fetchStats() {
+    try {
+      setLoading(true);
+      const response = await getAllPartners();
+      
+      // ✅ Check for error using 'in' operator
+      if ('error' in response) {
+        console.error("Error fetching partners:", response.error);
+        return;
       }
-    }
+      
+      const partners = response.data;
+      
+      // Calculate stats
+      const totalPartners = partners.length;
+      const activePartners = partners.filter(
+        (p) => p.status
+      ).length;
+      const platinumTier = partners.filter(
+        (p) => p.sponsorshipTier.toLowerCase() === "platinum"
+      ).length;
+      
+      // Count total event associations (including duplicates across partners)
+      const totalEventAssociations = partners.reduce((total, partner) => {
+        return total + (partner.associatedEvents?.length || 0);
+      }, 0);
 
-    fetchStats();
-  }, []);
+      setStats({
+        totalPartners,
+        activePartners,
+        platinumTier,
+        totalEventAssociations,
+      });
+    } catch (err) {
+      console.error("Error fetching partner stats:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchStats();
+}, []);
 
   const statsData = [
     {

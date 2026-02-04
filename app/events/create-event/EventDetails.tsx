@@ -880,46 +880,43 @@ export default function EventDetails({ step, setStep }: StepProps) {
 
   /** Handle form submission */
   const handleCreateEvent = async () => {
-   
-    // Reset previous errors
-    setSubmitError("");
+  setSubmitError("");
 
-    // Validate form
-    if (!validateForm()) {
-      setSubmitError("Please fill in all required fields correctly");
-      // Scroll to top to show errors
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-     startLoading()
-    setIsSubmitting(true);
+  if (!validateForm()) {
+    setSubmitError("Please fill in all required fields correctly");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
 
-    try {
-      let res;
-      if(eventId.trim()){
-       const data= {
-          stage: step,
-          eventDetails:{
-            eventBanner: bannerFile?.url,
-        eventType: eventType,
-        eventTitle: eventTitle,
-        eventTheme: eventTheme,
-        supportingText: supportingText,
-        startDate: startDateTime,
-        endDate: endDateTime,
-        venue: venue,
-        address: fullAddress,
-        brandColor: {
-          primaryColor: primaryColor,
-          secondaryColor: secondaryColor,
+  startLoading();
+  setIsSubmitting(true);
+
+  try {
+    let res;
+    
+    if (eventId.trim()) {
+      const data = {
+        stage: step,
+        eventDetails: {
+          eventBanner: bannerFile?.url,
+          eventType: eventType,
+          eventTitle: eventTitle,
+          eventTheme: eventTheme,
+          supportingText: supportingText,
+          startDate: startDateTime,
+          endDate: endDateTime,
+          venue: venue,
+          address: fullAddress,
+          brandColor: {
+            primaryColor: primaryColor,
+            secondaryColor: secondaryColor,
+          },
+          eventVisibility: eventVisibility,
         },
-        eventVisibility: eventVisibility,
-          }
-        }
-        res = await EditEventAction(data, eventId)
-        stopLoading()
-      }else{
-        res = await CreateEventAction({
+      };
+      res = await EditEventAction(data, eventId);
+    } else {
+      res = await CreateEventAction({
         eventBanner: bannerFile?.url,
         eventType: eventType,
         eventTitle: eventTitle,
@@ -935,30 +932,29 @@ export default function EventDetails({ step, setStep }: StepProps) {
         },
         eventVisibility: eventVisibility,
       });
-      }
-
-      
-
-      if (!res?.success) {
-        setSubmitError(res?.message || "Failed to create event");
-        console.log("message==", res?.message);
-        return;
-      }
-
-      console.log("res==", res);
-      router.push(`?id=${res?.data?._id}`);
-      setStep(step + 1);
-      stopLoading()
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An unexpected error occurred";
-      setSubmitError(errorMessage);
-      console.error("Error creating event:", error);
-    } finally {
-      setIsSubmitting(false);
-      stopLoading()
     }
-  };
+
+    // ✅ Check for error using 'in' operator
+    if ('error' in res) {
+      setSubmitError(res.error);
+      console.log("Error:", res.error);
+      return;
+    }
+
+    console.log("Success:", res);
+    router.push(`?id=${res.data._id}`);
+    setStep(step + 1);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred";
+    setSubmitError(errorMessage);
+    console.error("Error creating event:", error);
+  } finally {
+    setIsSubmitting(false);
+    stopLoading();
+  }
+};
+
 
   /** Clear specific field error when user starts typing */
   const handleFieldChange = <K extends keyof ValidationErrors>(

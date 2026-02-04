@@ -57,22 +57,26 @@ export default function AddPartner() {
 
   // Fetch events
   useEffect(() => {
-    const fetchEvents = async () => {
-      setLoadingEvents(true);
-      try {
-        const res = await getAllEvents();
-        if (res.success && res.data) {
-          setEvents(res.data);
-        }
-      } catch (error) {
-        console.error("Error fetching events:", error);
-      } finally {
-        setLoadingEvents(false);
+  const fetchEvents = async () => {
+    setLoadingEvents(true);
+    try {
+      const res = await getAllEvents();
+      
+      // ✅ Check for error using 'in' operator
+      if ('error' in res) {
+        console.error("Error fetching events:", res.error);
+      } else {
+        setEvents(res.data);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
 
-    fetchEvents();
-  }, []);
+  fetchEvents();
+}, []);
 
   const handleLogoUploadComplete = (imageData: { url: string }) => {
     setField("logoUrl", imageData.url);
@@ -140,53 +144,52 @@ export default function AddPartner() {
   };
 
   const handleSaveAndPublish = async () => {
-    // Reset previous errors
-    setSubmitError("");
+  setSubmitError("");
 
-    // Validate form
-    if (!validateForm()) {
-      setSubmitError("Please fill in all required fields correctly");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
+  if (!validateForm()) {
+    setSubmitError("Please fill in all required fields correctly");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    const partnerData = {
+      partnerName: partnerName.trim(),
+      brandLogo: logoUrl,
+      contactPerson: contactPerson.trim(),
+      contactEmail: contactEmail.trim(),
+      contactPhone: contactPhone.trim(),
+      sponsorshipTier,
+      associatedEvents: selectedEvents,
+      partnershipStartDate: startDate,
+      partnershipEndDate: endDate,
+      internalNotes: internalNotes.trim() || "",
+      visibilityControl: {
+        publicWebsite: showOnWebsite,
+        partnershipPage: featureOnPage,
+      },
+    };
+
+    const response = await createPartner(partnerData);
+
+    // ✅ Check for error using 'in' operator
+    if ('error' in response) {
+      setSubmitError(response.error);
+    } else {
+      setShowSuccessModal(true);
+      setTimeout(() => {
+        router.push("/dashboard/partners-and-sponsors");
+      }, 3000);
     }
-
-    setIsLoading(true);
-
-    try {
-      const partnerData = {
-        partnerName: partnerName.trim(),
-        brandLogo: logoUrl,
-        contactPerson: contactPerson.trim(),
-        contactEmail: contactEmail.trim(),
-        contactPhone: contactPhone.trim(),
-        sponsorshipTier,
-        associatedEvents: selectedEvents,
-        partnershipStartDate: startDate,
-        partnershipEndDate: endDate,
-        internalNotes: internalNotes.trim() || "",
-        visibilityControl: {
-          publicWebsite: showOnWebsite,
-          partnershipPage: featureOnPage,
-        },
-      };
-
-      const response = await createPartner(partnerData);
-
-      if (response.success) {
-        setShowSuccessModal(true);
-        setTimeout(() => {
-          router.push("/dashboard/partners-and-sponsors");
-        }, 3000);
-      } else {
-        setSubmitError(response.message || "Failed to create partner");
-      }
-    } catch (error) {
-      console.error("Error creating partner:", error);
-      setSubmitError("An error occurred while creating the partner");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  } catch (error) {
+    console.error("Error creating partner:", error);
+    setSubmitError("An error occurred while creating the partner");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleCancel = () => {
     router.back();

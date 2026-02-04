@@ -19,26 +19,27 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
 
-    try {
-      const res = await loginAction(email, password);
-      
-      if (res.success) {
-        // Pass email to OTP form
-        onSuccess(email);
-      } else {
-        setError(res.message || "Login failed");
-      }
-    } catch (err: any) {
-      setError(err?.message || "An error occurred. Please try again.");
-    } finally {
-      setLoading(false);
+  try {
+    const res = await loginAction(email, password);
+    
+    // ✅ Use 'in' operator for proper type checking
+    if ('error' in res) {
+      setError(res.error);
+    } else {
+      // Success case - res is now typed as { message: string; success: boolean }
+      onSuccess(email);
     }
-  };
+  } catch (err: any) {
+    setError(err?.message || "An error occurred. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <>

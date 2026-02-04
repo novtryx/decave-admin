@@ -1,3 +1,5 @@
+
+
 // const BASE_URL = process.env.API_URL!;
 
 // type FetchOptions = {
@@ -6,7 +8,6 @@
 //   headers?: HeadersInit;
 //   timeout?: number;
 // };
-
 
 // export async function fetcher<T>(
 //   url: string,
@@ -38,12 +39,16 @@
 
 //     clearTimeout(timeoutId);
 
+//     // Parse response body regardless of status
+//     const data = await res.json().catch(() => ({}));
+
 //     if (!res.ok) {
-//       const errorText = await res.text();
-//       throw new Error(`Request failed: ${res.status} - ${errorText}`);
+//       // Extract message from response body if available
+//       const errorMessage = data?.message || `Request failed with status ${res.status}`;
+//       throw new Error(errorMessage);
 //     }
 
-//     return res.json();
+//     return data;
 //   } catch (error: any) {
 //     if (error.name === "AbortError") {
 //       throw new Error(`Request timeout after ${timeout}ms`);
@@ -52,6 +57,8 @@
 //   }
 // }
 
+
+// lib/fetcher.ts - FIXED VERSION ✅
 
 const BASE_URL = process.env.API_URL!;
 
@@ -62,14 +69,22 @@ type FetchOptions = {
   timeout?: number;
 };
 
+// ✅ Add a response wrapper type
+type FetchResponse<T> = 
+  | { success: true; data: T }
+  | { success: false; error: string };
+
 export async function fetcher<T>(
   url: string,
   options: FetchOptions = {}
-): Promise<T> {
+): Promise<FetchResponse<T>> { // ✅ Changed return type
   const { timeout = 30000, body, headers, ...rest } = options;
 
   if (!BASE_URL) {
-    throw new Error("API_URL environment variable is not set");
+    return { 
+      success: false, 
+      error: "API_URL environment variable is not set" 
+    }; // ✅ Return error instead of throw
   }
 
   const fullUrl = `${BASE_URL}${url}`;
@@ -98,14 +113,23 @@ export async function fetcher<T>(
     if (!res.ok) {
       // Extract message from response body if available
       const errorMessage = data?.message || `Request failed with status ${res.status}`;
-      throw new Error(errorMessage);
+      return { 
+        success: false, 
+        error: errorMessage 
+      }; // ✅ Return error instead of throw
     }
 
-    return data;
+    return { success: true, data }; // ✅ Wrap success response
   } catch (error: any) {
     if (error.name === "AbortError") {
-      throw new Error(`Request timeout after ${timeout}ms`);
+      return { 
+        success: false, 
+        error: `Request timeout after ${timeout}ms` 
+      }; // ✅ Return error instead of throw
     }
-    throw error;
+    return { 
+      success: false, 
+      error: error.message || "An unexpected error occurred" 
+    }; // ✅ Return error instead of throw
   }
 }

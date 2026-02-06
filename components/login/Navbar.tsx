@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { FiArrowUpRight } from "react-icons/fi";
 
 export default function Navbar() {
@@ -36,8 +35,8 @@ export default function Navbar() {
         </div>
 
         {/* Public Website */}
-        <Link
-          href="#"
+        <a
+          href="https://www.decavemgt.com/"
           className="
             flex items-center gap-2
             rounded-full
@@ -47,10 +46,12 @@ export default function Navbar() {
             transition
             hover:bg-white/10
           "
+          target="_blank"
+          rel="noopener noreferrer"
         >
           Go to Public Website
           <FiArrowUpRight />
-        </Link>
+        </a>
       </div>
     </header>
   );

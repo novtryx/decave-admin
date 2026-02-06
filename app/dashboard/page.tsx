@@ -1,117 +1,30 @@
-// // import { DashboardLayout } from "@/components/DashboardLayout";
-// // import SystemStats from "./SystemStats";
-// // import UpcomingEvents from "./UpcomingEvents";
-// // import Alerts from "./Alerts";
-// // import RecentActivity from "./RecentActivity";
+"use client";
 
-// // export default function Dashboard() {
-// //   return (
-// //     <DashboardLayout>
-// //       {/* Heading */}
-// //       <div className="mb-10">
-// //         <h3 className="text-[#F9F7F4] text-2xl font-semibold mb-2">
-// //           Dashboard
-// //         </h3>
-// //         <p className="text-[#B3B3B3]">Platform overview and activity</p>
-// //       </div>
-
-// //       {/* System Stats section */}
-// //       <SystemStats />
-
-// //       {/* Upcoming Events and Alerts Section */}
-// //       <div className="my-10 grid grid-cols-1 lg:grid-cols-10 gap-4">
-// //         <div className="lg:col-span-7">
-// //           <UpcomingEvents />
-// //         </div>
-// //         <div className="lg:col-span-3">
-// //           <Alerts />
-// //         </div>
-// //       </div>
-
-// //       {/* Recent Activity Section */}
-// //       <RecentActivity />
-// //     </DashboardLayout>
-// //   );
-// // }
-
-
-// import { DashboardLayout } from "@/components/DashboardLayout";
-// import SystemStats from "./SystemStats";
-// import UpcomingEvents from "./UpcomingEvents";
-// import Alerts from "./Alerts";
-// import RecentActivity from "./RecentActivity";
-// import { getDashboardData } from "@/app/actions/dashboard";
-
-// export default async function Dashboard() {
-//   const dashboardData = await getDashboardData();
-
-//   if (!dashboardData.success) {
-//     return (
-//       <DashboardLayout>
-//         <div className="text-center text-red-500">
-//           Failed to load dashboard data
-//         </div>
-//       </DashboardLayout>
-//     );
-//   }
-
-//   return (
-//     <DashboardLayout>
-//       {/* Heading */}
-//       <div className="mb-10">
-//         <h3 className="text-[#F9F7F4] text-2xl font-semibold mb-2">
-//           Dashboard
-//         </h3>
-//         <p className="text-[#B3B3B3]">Platform overview and activity</p>
-//       </div>
-
-//       {/* System Stats section */}
-//       <SystemStats
-//         ticketSale={dashboardData.ticketSale}
-//         revenue={dashboardData.revnue}
-//         activeEvents={dashboardData.activeEvents}
-//         avgTicketPrice={dashboardData.avgTicketPrice}
-//       />
-
-//       {/* Upcoming Events and Alerts Section */}
-//       <div className="my-10 grid grid-cols-1 lg:grid-cols-10 gap-4">
-//         <div className="lg:col-span-7">
-//           <UpcomingEvents events={dashboardData.upcomingEvents.events} />
-//         </div>
-//         <div className="lg:col-span-3">
-//           <Alerts events={dashboardData.upcomingEvents.events} />
-//         </div>
-//       </div>
-
-//       {/* Recent Activity Section */}
-//       <RecentActivity activities={dashboardData.recentActivities.activities} />
-//     </DashboardLayout>
-//   );
-// }
-
-
+import { useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import SystemStats from "./SystemStats";
 import UpcomingEvents from "./UpcomingEvents";
 import Alerts from "./Alerts";
 import RecentActivity from "./RecentActivity";
-import { getDashboardData } from "@/app/actions/dashboard";
+import { dashboardStore } from "@/store/dashboard/dashboardStore";
 
-export default async function Dashboard() {
-  const dashboardData = await getDashboardData();
+export default function Dashboard() {
+  const {
+    ticketSale,
+    revenue,
+    activeEvents,
+    avgTicketPrice,
+    upcomingEvents,
+    recentActivities,
+    isLoading,
+    error,
+    fetchDashboardData,
+  } = dashboardStore();
 
-  // ✅ Check for error using 'in' operator
-  if ('error' in dashboardData) {
-    return (
-      <DashboardLayout>
-        <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-4 text-center text-red-400">
-          {dashboardData.error || "Failed to load dashboard data"}
-        </div>
-      </DashboardLayout>
-    );
-  }
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
-  // ✅ Now TypeScript knows dashboardData is DashboardDataType
   return (
     <DashboardLayout>
       {/* Heading */}
@@ -122,26 +35,44 @@ export default async function Dashboard() {
         <p className="text-[#B3B3B3]">Platform overview and activity</p>
       </div>
 
-      {/* System Stats section */}
-      <SystemStats
-        ticketSale={dashboardData.ticketSale}
-        revenue={dashboardData.revnue}
-        activeEvents={dashboardData.activeEvents}
-        avgTicketPrice={dashboardData.avgTicketPrice}
-      />
-
-      {/* Upcoming Events and Alerts Section */}
-      <div className="my-10 grid grid-cols-1 lg:grid-cols-10 gap-4">
-        <div className="lg:col-span-7">
-          <UpcomingEvents events={dashboardData.upcomingEvents.events} />
+      {/* Error State */}
+      {error && (
+        <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-4 text-center text-red-400 mb-6">
+          {error}
         </div>
-        <div className="lg:col-span-3">
-          <Alerts events={dashboardData.upcomingEvents.events} />
-        </div>
-      </div>
+      )}
 
-      {/* Recent Activity Section */}
-      <RecentActivity activities={dashboardData.recentActivities.activities} />
+      {/* Loading State */}
+      {isLoading ? (
+        <section className="flex items-center justify-center py-20 mb-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#cca33a]"></div>
+        </section>
+      ) : (
+        <>
+          {/* System Stats section */}
+          {ticketSale && revenue && activeEvents && avgTicketPrice && (
+            <SystemStats
+              ticketSale={ticketSale}
+              revenue={revenue}
+              activeEvents={activeEvents}
+              avgTicketPrice={avgTicketPrice}
+            />
+          )}
+
+          {/* Upcoming Events and Alerts Section */}
+          <div className="my-10 grid grid-cols-1 lg:grid-cols-10 gap-4">
+            <div className="lg:col-span-7">
+              <UpcomingEvents events={upcomingEvents} />
+            </div>
+            <div className="lg:col-span-3">
+              <Alerts events={upcomingEvents} />
+            </div>
+          </div>
+
+          {/* Recent Activity Section */}
+          <RecentActivity activities={recentActivities} />
+        </>
+      )}
     </DashboardLayout>
   );
 }

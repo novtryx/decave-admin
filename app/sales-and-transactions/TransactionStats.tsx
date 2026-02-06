@@ -1,59 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import FlashCard from "@/components/dashboard/FlashCard";
 import { FaCheck, FaRegClock } from "react-icons/fa6";
 import { IoCloseOutline } from "react-icons/io5";
 import { TbCurrencyNaira } from "react-icons/tb";
-import { getAllTransactions } from "../actions/transaction";
-
-interface TransactionStatsData {
-  totalRevenue: number;
-  completedCount: number;
-  pendingCount: number;
-  failedCount: number;
-}
+import { useTransactionStore } from "@/store/transactions/transactionStore";
 
 export default function TransactionStats() {
-  const [stats, setStats] = useState<TransactionStatsData>({
-    totalRevenue: 0,
-    completedCount: 0,
-    pendingCount: 0,
-    failedCount: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  const { stats, loading, fetchTransactions } = useTransactionStore();
 
   useEffect(() => {
-  async function fetchStats() {
-    try {
-      setLoading(true);
-      // Just fetch page 1 - we only need the stats object, not all transactions
-      const response = await getAllTransactions(1, 10);
-
-      // ✅ Check for error using 'in' operator
-      if ('error' in response) {
-        console.error("Error fetching transaction stats:", response.error);
-        return;
-      }
-
-      if (response.stats) {
-        // Use the stats object directly from the API response
-        setStats({
-          totalRevenue: response.stats.totalRevenue || 0,
-          completedCount: response.stats.totalCompleted || 0,
-          pendingCount: response.stats.totalPending || 0,
-          failedCount: response.stats.totalFailed || 0,
-        });
-      }
-    } catch (err) {
-      console.error("Error fetching transaction stats:", err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  fetchStats();
-}, []);
+    fetchTransactions(1, 10);
+  }, [fetchTransactions]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {

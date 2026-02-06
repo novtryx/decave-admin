@@ -2,14 +2,7 @@ import { HiTrendingDown, HiTrendingUp } from "react-icons/hi";
 import { MdOutlineCalendarMonth } from "react-icons/md";
 import { TbCurrencyNaira, TbTicket } from "react-icons/tb";
 import FlashCard from "@/components/dashboard/FlashCard";
-
-interface MetricData {
-  currentMonth: number;
-  lastMonth: number;
-  percentageChange: number;
-  trend: "up" | "down";
-  currency?: string;
-}
+import { MetricData } from "@/types/dashboardType";
 
 interface SystemStatsProps {
   ticketSale: MetricData;
@@ -40,6 +33,7 @@ export default function SystemStats({
       percentIncrease: ticketSale.trend === "up",
       percentValue: `${ticketSale.percentageChange > 0 ? "+" : ""}${ticketSale.percentageChange.toFixed(1)}%`,
       hasPercent: true,
+      showTrend: ticketSale.trend !== "stable",
     },
     {
       id: 2,
@@ -49,6 +43,7 @@ export default function SystemStats({
       percentIncrease: revenue.trend === "up",
       percentValue: `${revenue.percentageChange > 0 ? "+" : ""}${revenue.percentageChange.toFixed(1)}%`,
       hasPercent: true,
+      showTrend: revenue.trend !== "stable",
     },
     {
       id: 3,
@@ -58,6 +53,7 @@ export default function SystemStats({
       percentIncrease: activeEvents.trend === "up",
       percentValue: `${activeEvents.percentageChange > 0 ? "+" : ""}${activeEvents.percentageChange.toFixed(1)}%`,
       hasPercent: true,
+      showTrend: activeEvents.trend !== "stable",
     },
     {
       id: 4,
@@ -67,6 +63,7 @@ export default function SystemStats({
       percentIncrease: avgTicketPrice.trend === "up",
       percentValue: `${avgTicketPrice.percentageChange > 0 ? "+" : ""}${avgTicketPrice.percentageChange.toFixed(1)}%`,
       hasPercent: true,
+      showTrend: avgTicketPrice.trend !== "stable",
     },
   ];
 
@@ -90,7 +87,7 @@ export default function SystemStats({
             </div>
           </div>
           {/* Trend */}
-          {item.hasPercent && (
+          {item.hasPercent && item.showTrend && (
             <div className="mt-3 sm:mt-4">
               {item.percentIncrease ? (
                 <div className="flex items-center gap-1">
@@ -107,6 +104,14 @@ export default function SystemStats({
                   </p>
                 </div>
               )}
+            </div>
+          )}
+          {/* Stable state - no change */}
+          {item.hasPercent && !item.showTrend && (
+            <div className="mt-3 sm:mt-4">
+              <p className="text-[#9F9FA9] text-xs sm:text-sm">
+                No change from last month
+              </p>
             </div>
           )}
         </FlashCard>

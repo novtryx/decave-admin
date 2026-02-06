@@ -4,7 +4,7 @@ export interface MetricData {
   currentMonth: number;
   lastMonth: number;
   percentageChange: number;
-  trend: "up" | "down";
+  trend: "up" | "down" | "stable";
   currency?: string;
 }
 

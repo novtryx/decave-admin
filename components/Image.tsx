@@ -6,15 +6,15 @@ import { IoImageOutline, IoCloseCircle } from 'react-icons/io5';
 import Image from 'next/image';
 import { uploadImage } from '@/app/actions/upload';
 import Spinner from './Spinner';
+import { ImageData } from '@/store/create-events/EventDetails';
 
 interface ImageUploadProps {
   label: string;
   required?: boolean;
   accept?: string;
   maxSize?: number; // in MB
-  onUploadComplete?: (imageData: {
-    url: string;
-  }) => void;
+  onUploadComplete?: (imageData: ImageData) => void;
+
   error?: string;
   helperText?: string;
   className?: string;
@@ -47,6 +47,8 @@ export default function ImageUpload({
     }
   }, [initialImage, preview]);
 
+
+  // Process and validate file
   // Handle file selection
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -54,63 +56,62 @@ export default function ImageUpload({
       processFile(file);
     }
   };
-
-  // Process and validate file
   const processFile = async (file: File) => {
-  // Validate file size
-  if (file.size > maxSize * 1024 * 1024) {
-    setUploadError(`File size must be less than ${maxSize}MB`);
-    return;
-  }
-
-  // Validate file type
-  const acceptedTypes = accept.split(",").map(type => type.trim());
-  const isValidType = acceptedTypes.some(type => {
-    if (type.startsWith(".")) {
-      return file.name.toLowerCase().endsWith(type);
+    // Validate file size
+    if (file.size > maxSize * 1024 * 1024) {
+      setUploadError(`File size must be less than ${maxSize}MB`);
+      return;
     }
-    return file.type === type;
-  });
 
-  if (!isValidType) {
-    setUploadError(`Please upload a valid file type: ${helperText}`);
-    return;
-  }
+    // Validate file type
+    const acceptedTypes = accept.split(",").map(type => type.trim());
+    const isValidType = acceptedTypes.some(type => {
+      if (type.startsWith(".")) {
+        return file.name.toLowerCase().endsWith(type);
+      }
+      return file.type === type;
+    });
 
-  // Create preview
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    setPreview(reader.result as string);
+    if (!isValidType) {
+      setUploadError(`Please upload a valid file type: ${helperText}`);
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload
+    setIsUploading(true);
+    setUploadError("");
+
+    try {
+      const res = await uploadImage(file);
+      // console.log("image===", res);
+
+
+
+      // 🔑 Narrow the union
+      if (typeof res === "string") {
+        onUploadComplete?.({ url: res });
+      } else if ("error" in res) {
+        // error
+        setUploadError(res.error || "Upload failed");
+        setPreview(null);
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Upload failed. Please try again.";
+      setUploadError(errorMessage);
+      setPreview(null);
+      console.error("Upload error:", err);
+    } finally {
+      setIsUploading(false);
+    }
   };
-  reader.readAsDataURL(file);
-
-  // Upload
-  setIsUploading(true);
-  setUploadError("");
-
-  try {
-    const res = await uploadImage(file);
-    console.log("image===", res);
-
-    // 🔑 Narrow the union
-    if (typeof res === "string") {
-      // success case → res is the image URL
-      onUploadComplete?.(res);
-    } else if ("error" in res) {
-  // error
-  setUploadError(res.error || "Upload failed");
-  setPreview(null);
-}
-  } catch (err) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Upload failed. Please try again.";
-    setUploadError(errorMessage);
-    setPreview(null);
-    console.error("Upload error:", err);
-  } finally {
-    setIsUploading(false);
-  }
-};
 
 
   // Handle drag events
@@ -211,7 +212,7 @@ export default function ImageUpload({
               fill
               className="object-contain"
             />
-            
+
             {/* Overlay on hover */}
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
               <button

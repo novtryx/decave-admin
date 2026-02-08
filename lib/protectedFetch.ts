@@ -4,6 +4,7 @@ import { getAccessToken } from "./authCookies";
 type ProtectedFetchError = {
   success: false;
   error: string;
+  message?: string
 };
 
 export async function protectedFetch<T>(

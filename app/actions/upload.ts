@@ -37,7 +37,7 @@ interface ResType {
 
 export async function uploadImage(
   file: File
-): Promise<ResType | { error: string }> {
+): Promise< any | { error: string }> {
   const formData = new FormData();
   formData.append("image", file);
 
@@ -51,5 +51,5 @@ export async function uploadImage(
     return { error: res.error };
   }
 
-  return res.data;
+  return res?.data?.data?.url;
 }

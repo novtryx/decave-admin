@@ -1,72 +1,83 @@
-"use client"
+"use client";
 
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useEffect, useState, Suspense } from "react";
 import { FaArrowLeftLong } from "react-icons/fa6";
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion";
+import { useRouter, useSearchParams } from "next/navigation";
 
-import { LuSave } from "react-icons/lu";
 import EventDetails from "../create-event/EventDetails";
 import AboutEvent from "../create-event/AboutEvent";
 import Tickets from "../create-event/Tickets";
 import Contact from "../create-event/Contact";
 import Lineup from "../create-event/Lineup";
-import { useRouter, useSearchParams } from "next/navigation";
+
 import { useSingleEventStore } from "@/store/events/SingleEvent";
 import { useLoadingStore } from "@/store/LoadingState";
 
 function CreateEventContent() {
-  const [step, setStep] = useState(1);
-  const [direction, setDirection] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const eventId = searchParams.get('id') ?? "";
-  const { event, isLoading, error, fetchEvent, clearError } = useSingleEventStore();
-  const {startLoading, stopLoading} = useLoadingStore()
+  const eventId = searchParams.get("id");
+
+  const event = useSingleEventStore((s) => s.event);
+  const isLoading = useSingleEventStore((s) => s.isLoading);
+  const error = useSingleEventStore((s) => s.error);
+  const fetchEvent = useSingleEventStore((s) => s.fetchEvent);
+
+  const { startLoading, stopLoading } = useLoadingStore();
+
+  const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState(0);
+
+  useEffect(() => {
+    if (eventId) fetchEvent(eventId);
+  }, [eventId, fetchEvent]);
+
+  useEffect(() => {
+    if (event?.stage) {
+      setStep(event.stage);
+    }
+  }, [event]);
+
+  useEffect(() => {
+    if (isLoading) startLoading();
+    else stopLoading();
+  }, [isLoading, startLoading, stopLoading]);
 
   const tabs = [
     { id: 1, name: "Event Details", component: <EventDetails step={step} setStep={setStep} /> },
     { id: 2, name: "About", component: <AboutEvent step={step} setStep={setStep} /> },
     { id: 3, name: "Tickets", component: <Tickets step={step} setStep={setStep} /> },
     { id: 4, name: "Lineup", component: <Lineup step={step} setStep={setStep} /> },
-    { id: 5, name: "Contact", component: <Contact step={step} setStep={setStep} /> }
-  ]
+    { id: 5, name: "Contact", component: <Contact step={step} setStep={setStep} /> },
+  ];
 
-  const slideVariants = {
-    enter: (dir: number) => ({
-      x: dir > 0 ? 1000 : -1000,
-      opacity: 0
-    }),
-    center: {
-      x: 0,
-      opacity: 1
-    },
-    exit: (dir: number) => ({
-      x: dir < 0 ? 1000 : -1000,
-      opacity: 0
-    })
-  }
-
-  const handleTabClick = (id: number) => {
-    setDirection(id > step ? 1 : -1)
-    setStep(id)
-  }
-
-  useEffect(() => {
-    if(eventId){
-      fetchEvent(eventId);
-    }
-
-    if(isLoading){
-      startLoading()
-    }else{
-      stopLoading()
-    }
-  }, [eventId, isLoading, fetchEvent, startLoading, stopLoading]);
+  console.log("event", event)
   
+  const slideVariants = {
+  enter: (dir: number) => ({
+    x: dir > 0 ? 1000 : -1000,
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+  },
+  exit: (dir: number) => ({
+    x: dir < 0 ? 1000 : -1000,
+    opacity: 0,
+  }),
+};
+
+  const handleTabClick = (id: number) => { 
+    setDirection(id > step ? 1 : -1); 
+    setStep(id) 
+  }
 
   return (
     <DashboardLayout>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
       {/* Heading */}
       <section className="flex flex-col lg:flex-row justify-between gap-4 sm:gap-0">
         <div className="flex gap-4 sm:gap-6 items-center">
@@ -125,7 +136,7 @@ function CreateEventContent() {
         </AnimatePresence>
       </div>
     </DashboardLayout>
-  )
+  );
 }
 
 export default function CreateEvent() {
@@ -133,5 +144,5 @@ export default function CreateEvent() {
     <Suspense fallback={<div>Loading...</div>}>
       <CreateEventContent />
     </Suspense>
-  )
+  );
 }

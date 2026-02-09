@@ -2,13 +2,13 @@ import { create } from "zustand";
 import { getEventById } from "@/app/actions/event";
 
 /* =======================
-   Domain Model (Store)
+   Domain Model
 ======================= */
 
 export interface Event {
+  _id: string;
   stage: number;
   published: boolean;
-  _id: string;
 
   eventDetails: {
     eventType: string;
@@ -38,13 +38,13 @@ export interface Event {
   };
 
   tickets: {
+    _id: string;
     ticketName: string;
     price: number;
     currency: string;
     initialQuantity: number;
     availableQuantity: number;
     benefits: string[];
-    _id: string;
   }[];
 
   artistLineUp: {
@@ -71,35 +71,89 @@ export interface Event {
 }
 
 /* =======================
+   API Response Types
+======================= */
+
+type EventApi = {
+  _id: string;
+  stage?: number;
+  published?: boolean;
+
+  eventDetails?: {
+    eventType?: string;
+    eventTitle?: string;
+    eventTheme?: string;
+    supportingText?: string;
+    eventBanner?: string;
+    startDate?: string;
+    endDate?: string;
+    venue?: string;
+    address?: string;
+    brandColor?: {
+      primaryColor?: string;
+      secondaryColor?: string;
+    };
+    eventVisibility?: boolean;
+  };
+
+  aboutEvent?: Event["aboutEvent"];
+  tickets?: Event["tickets"];
+  artistLineUp?: Event["artistLineUp"];
+  emergencyContact?: Event["emergencyContact"];
+
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+type GetEventResponse =
+  | { ok: true; data: EventApi }
+  | { ok: false; error: string };
+
+/* =======================
    API → Domain Mapper
 ======================= */
 
-const mapSingleEventToEvent = (data: any): Event => ({
+const mapEvent = (data: EventApi): Event => ({
   _id: data._id,
   stage: data.stage ?? 1,
   published: data.published ?? false,
 
   eventDetails: {
-    eventType: data.eventDetails.eventType,
-    eventTitle: data.eventDetails.eventTitle,
-    eventTheme: data.eventDetails.eventTheme,
-    supportingText: data.eventDetails.supportingText,
-    eventBanner: data.eventDetails.eventBanner,
-    startDate: new Date(data.eventDetails.startDate),
-    endDate: new Date(data.eventDetails.endDate),
-    venue: data.eventDetails.venue,
-    address: data.eventDetails.address,
+    eventType: data.eventDetails?.eventType ?? "",
+    eventTitle: data.eventDetails?.eventTitle ?? "",
+    eventTheme: data.eventDetails?.eventTheme ?? "",
+    supportingText: data.eventDetails?.supportingText ?? "",
+    eventBanner: data.eventDetails?.eventBanner ?? "",
+    startDate: data.eventDetails?.startDate
+      ? new Date(data.eventDetails.startDate)
+      : new Date(),
+    endDate: data.eventDetails?.endDate
+      ? new Date(data.eventDetails.endDate)
+      : new Date(),
+    venue: data.eventDetails?.venue ?? "",
+    address: data.eventDetails?.address,
     brandColor: {
-      primaryColor: data.eventDetails.brandColor.primaryColor,
-      secondaryColor: data.eventDetails.brandColor.secondaryColor,
+      primaryColor:
+        data.eventDetails?.brandColor?.primaryColor ?? "#000000",
+      secondaryColor:
+        data.eventDetails?.brandColor?.secondaryColor ?? "#ffffff",
     },
-    eventVisibility: data.eventDetails.eventVisibility,
+    eventVisibility: data.eventDetails?.eventVisibility ?? false,
   },
 
-  aboutEvent: data.aboutEvent,
-  tickets: data.tickets,
-  artistLineUp: data.artistLineUp,
-  emergencyContact: data.emergencyContact,
+  aboutEvent: data.aboutEvent ?? {
+    heading: "",
+    description: "",
+    content: [],
+  },
+
+  tickets: data.tickets ?? [],
+  artistLineUp: data.artistLineUp ?? [],
+  emergencyContact: data.emergencyContact ?? {
+    security: "",
+    medical: "",
+    lostButFound: "",
+  },
 
   createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
   updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
@@ -116,7 +170,11 @@ interface EventStore {
 
   fetchEvent: (id: string) => Promise<void>;
   setEvent: (event: Event | null) => void;
-  updateEvent: (updates: Partial<Event>) => void;
+
+  updateEventDetails: (
+    updates: Partial<Event["eventDetails"]>
+  ) => void;
+
   clearEvent: () => void;
   clearError: () => void;
 }
@@ -190,12 +248,18 @@ export const useSingleEventStore = create<EventStore>((set, get) => ({
     set({ event, error: null });
   },
 
-  updateEvent: (updates) => {
-    const currentEvent = get().event;
-    if (!currentEvent) return;
+  updateEventDetails: (updates) => {
+    const current = get().event;
+    if (!current) return;
 
     set({
-      event: { ...currentEvent, ...updates },
+      event: {
+        ...current,
+        eventDetails: {
+          ...current.eventDetails,
+          ...updates,
+        },
+      },
     });
   },
 

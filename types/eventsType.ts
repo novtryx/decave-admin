@@ -56,12 +56,21 @@ export interface Event {
     };
   }[];
   //stage 5
+
   emergencyContact:{
     security: string;
     medical: string;
     lostButFound:string;
     supportingInfo?: string;
   }
+  faq?: {
+    question: string;
+    answer: string;
+  }[];
+  code?: {
+    title: string;
+    body: string;
+  }[];
   createdAt?: Date;
   updatedAt?: Date;
 }

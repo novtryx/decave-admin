@@ -1,18 +1,19 @@
-"use client"
+"use client";
 
-import { calculateTotalTickets, formatDate, getEventStatus } from '@/constants/functions';
-import { Event } from '@/types/eventsType';
-import React from 'react';
-import { AiOutlineEye, AiOutlineEdit, AiOutlineDelete } from 'react-icons/ai';
-import { FiEdit2 } from 'react-icons/fi';
-import { LuChevronsUpDown } from 'react-icons/lu';
-import { RiDeleteBin6Line } from 'react-icons/ri';
-import { TbCopy } from 'react-icons/tb';
+import {
+  calculateTotalTickets,
+  formatDate,
+  getEventStatus,
+} from "@/constants/functions";
+import { Event } from "@/types/eventsType";
+import React from "react";
+import { AiOutlineEye } from "react-icons/ai";
+import { FiEdit2 } from "react-icons/fi";
+import { LuChevronsUpDown } from "react-icons/lu";
+import { RiDeleteBin6Line } from "react-icons/ri";
+import { TbCopy } from "react-icons/tb";
 
-type EventStatus = 'live' | 'draft' | 'past' | 'upcoming';
-
-
-
+type EventStatus = "live" | "draft" | "past" | "upcoming";
 
 interface EventTableProps {
   events: Event[];
@@ -22,13 +23,12 @@ interface EventTableProps {
   onDelete?: (event: Event) => void;
 }
 
- const SortableHeader = ({ label }: { label: string }) => (
+const SortableHeader = ({ label }: { label: string }) => (
   <div className="flex items-center gap-1 cursor-pointer select-none">
     <span>{label}</span>
     <LuChevronsUpDown className="w-4 h-4 text-gray-500" />
   </div>
 );
-
 
 export const EventTable: React.FC<EventTableProps> = ({
   events,
@@ -39,23 +39,24 @@ export const EventTable: React.FC<EventTableProps> = ({
 }) => {
   const getStatusBadge = (status: EventStatus) => {
     const styles = {
-      live: 'bg-green-500/10 text-green-500 border border-green-500/20',
-      draft: 'bg-gray-500/10 text-gray-400 border border-gray-500/20',
-      past: 'bg-gray-600/10 text-gray-400 border border-gray-600/20',
-      upcoming: 'bg-yellow-600/10 text-yellow-600 border border-yellow-600/20',
+      live: "bg-green-500/10 text-green-500 border border-green-500/20",
+      draft: "bg-gray-500/10 text-gray-400 border border-gray-500/20",
+      past: "bg-gray-600/10 text-gray-400 border border-gray-600/20",
+      upcoming: "bg-yellow-600/10 text-yellow-600 border border-yellow-600/20",
     };
 
     const labels = {
-      live: 'Live',
-      draft: 'Draft',
-      past: 'Past',
-      upcoming: 'UPCOMING',
+      live: "Live",
+      draft: "Draft",
+      past: "Past",
+      upcoming: "UPCOMING",
     };
 
-    
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
-        {status === 'live' && (
+      <span
+        className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}
+      >
+        {status === "live" && (
           <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
         )}
         {labels[status]}
@@ -101,20 +102,30 @@ export const EventTable: React.FC<EventTableProps> = ({
         </thead>
         <tbody>
           {events.map((event) => (
-            <tr key={event._id} className="border-b border-gray-800/50 hover:bg-gray-900/30 transition-colors">
-              <td className="p-4 text-white font-medium">{event.eventDetails.eventTitle}</td>
+            <tr
+              key={event._id}
+              className="border-b border-gray-800/50 hover:bg-gray-900/30 transition-colors"
+            >
+              <td className="p-4 text-white font-medium">
+                {event.eventDetails.eventTitle}
+              </td>
               <td className="p-4">{getStatusBadge(getEventStatus(event))}</td>
-              <td className="p-4 text-gray-300">{formatDate(event.eventDetails.endDate)}</td>
+              <td className="p-4 text-gray-300">
+                {formatDate(event.eventDetails.endDate)}
+              </td>
               <td className="p-4 text-gray-300">{event.eventDetails.venue}</td>
               <td className="p-4">
                 <div className="flex flex-col gap-1">
                   <span className="text-white font-medium">
-                    {calculateTotalTickets(event.tickets).totalSoldTickets} / {calculateTotalTickets(event.tickets).totalInitialTickets}
+                    {calculateTotalTickets(event.tickets).totalSoldTickets} /{" "}
+                    {calculateTotalTickets(event.tickets).totalInitialTickets}
                   </span>
                   <div className="w-32 h-1.5 bg-gray-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-blue-500 rounded-full transition-all"
-                      style={{ width: `${getProgressPercentage(calculateTotalTickets(event.tickets).totalSoldTickets, calculateTotalTickets(event.tickets).totalInitialTickets)}%` }}
+                      style={{
+                        width: `${getProgressPercentage(calculateTotalTickets(event.tickets).totalSoldTickets, calculateTotalTickets(event.tickets).totalInitialTickets)}%`,
+                      }}
                     ></div>
                   </div>
                 </div>
@@ -132,7 +143,16 @@ export const EventTable: React.FC<EventTableProps> = ({
                       <AiOutlineEye size={18} />
                     </button>
                   )}
-                  {onEdit && getEventStatus(event) === 'draft' && (
+                  {/* {onEdit && getEventStatus(event) === 'draft' && (
+                    <button
+                      onClick={() => onEdit(event)}
+                      className="text-gray-400 hover:text-white transition-colors"
+                      aria-label="Edit event"
+                    >
+                      <FiEdit2 size={18} />
+                    </button>
+                  )} */}
+                  {onEdit && (
                     <button
                       onClick={() => onEdit(event)}
                       className="text-gray-400 hover:text-white transition-colors"
@@ -141,15 +161,17 @@ export const EventTable: React.FC<EventTableProps> = ({
                       <FiEdit2 size={18} />
                     </button>
                   )}
-                  {onCopy && (getEventStatus(event) === 'upcoming' || getEventStatus(event) === 'draft') && (
-                    <button
-                      onClick={() => onCopy(event)}
-                      className="text-gray-400 hover:text-white transition-colors"
-                      aria-label="Copy event"
-                    >
-                      <TbCopy size={18} />
-                    </button>
-                  )}
+                  {onCopy &&
+                    (getEventStatus(event) === "upcoming" ||
+                      getEventStatus(event) === "draft") && (
+                      <button
+                        onClick={() => onCopy(event)}
+                        className="text-gray-400 hover:text-white transition-colors"
+                        aria-label="Copy event"
+                      >
+                        <TbCopy size={18} />
+                      </button>
+                    )}
                   {onDelete && (
                     <button
                       onClick={() => onDelete(event)}

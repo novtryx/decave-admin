@@ -21,6 +21,18 @@ const defaultContactState = {
   medical: "",
   lostFound: "",
   supportingInfo: "",
+  faq: [
+    {
+    question: "",
+    answer: ""
+    }
+  ],
+  code: [
+    {
+    title: "",
+    body: ""
+    }
+  ],
 };
 
 export const useContactStore = create<ContactState>((set) => ({

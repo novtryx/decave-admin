@@ -125,37 +125,37 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
           <tbody>
             {transactions.map((transaction) => (
               <tr
-                key={transaction._id}
+                key={transaction?._id}
                 className="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors"
               >
                 <td className="p-4 text-sm text-[#F4F4F5] font-semibold">
-                  {transaction.txnId}
+                  {transaction?.txnId}
                 </td>
                 <td className="p-4 text-sm text-[#F4F4F5]">
                   <div className="flex flex-col">
-                    <span className="font-medium">{transaction.event.eventTitle}</span>
-                    <span className="text-xs text-[#9F9FA9]">{transaction.event.venue}</span>
+                    <span className="font-medium">{transaction?.event?.eventTitle}</span>
+                    <span className="text-xs text-[#9F9FA9]">{transaction?.event?.venue}</span>
                   </div>
                 </td>
                 <td className="p-4 text-sm text-[#9F9FA9]">
-                  {transaction.ticket.ticketName}
+                  {transaction?.ticket?.ticketName}
                 </td>
                 <td className="p-4 text-sm text-[#9F9FA9]">
                   {getTransactionQuantity(transaction)}
                 </td>
                 <td className="p-4 text-sm text-[#9F9FA9]">
-                  {formatCurrency(transaction.ticket.price, transaction.ticket.currency)}
+                  {formatCurrency(transaction?.ticket?.price, transaction?.ticket?.currency)}
                 </td>
                 <td className="p-4 text-sm text-[#9F9FA9]">
-                  {transaction.buyerEmail}
+                  {transaction?.buyerEmail}
                 </td>
                 <td className="p-4">
                   <span className={`px-3 py-1 text-sm rounded-full inline-block font-medium ${getStatusColor(transaction.status)}`}>
-                    {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                    {transaction?.status?.charAt(0)?.toUpperCase() + transaction?.status?.slice(1)}
                   </span>
                 </td>
                 <td className="p-4 text-sm text-[#9F9FA9]">
-                  {formatDate(transaction.createdAt)}
+                  {formatDate(transaction?.createdAt)}
                 </td>
               </tr>
             ))}

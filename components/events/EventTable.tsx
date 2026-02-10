@@ -132,7 +132,7 @@ export const EventTable: React.FC<EventTableProps> = ({
                       <AiOutlineEye size={18} />
                     </button>
                   )}
-                  {onEdit && getEventStatus(event) === 'draft' && (
+                  {onEdit  && (
                     <button
                       onClick={() => onEdit(event)}
                       className="text-gray-400 hover:text-white transition-colors"

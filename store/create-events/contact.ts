@@ -6,6 +6,8 @@ interface ContactState {
   medical: string;
   lostFound: string;
   supportingInfo: string;
+  faq: Array<{ question: string; answer: string }>;
+  code: Array<{ title: string; body: string }>;
 
   setField: <K extends keyof ContactState>(
     key: K,

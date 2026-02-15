@@ -1687,7 +1687,7 @@ export default function Lineup({ step, setStep }: StepProps) {
 
       const payload = {
         stage: step,
-        artistlineup: validArtists.map((artist) => ({
+        artistlineUp: validArtists.map((artist) => ({
           artistImage: artist.imageUrl!.trim(),
           artistName: artist.name!.trim(),
           artistGenre: artist.role!.trim(),

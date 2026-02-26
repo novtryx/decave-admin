@@ -58,7 +58,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
-      currency: currency,
+      currency: currency || "NGN",
     }).format(amount);
   };
 

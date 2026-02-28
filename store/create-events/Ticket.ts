@@ -7,7 +7,8 @@ export interface Benefit {
 }
 
 export interface Ticket {
-  id: number;
+  id: number; // frontend temp id
+  _id?: string; // optional MongoDB id
   ticketName: string;
   price: string;
   quantity: string;
@@ -17,6 +18,7 @@ export interface Ticket {
   status: "Active" | "Inactive";
   soldCount: number;
 }
+
 
 interface TicketStore {
   tickets: Ticket[];
@@ -35,6 +37,8 @@ interface TicketStore {
   
   initializeTickets: (initialTickets?: Ticket[]) => void;
   resetTickets: () => void;
+  updateOrAddTicket: (ticket: Ticket) => void;
+
 }
 
 const defaultTicketState = {
@@ -138,6 +142,28 @@ export const useTicketStore = create<TicketStore>((set) => ({
           ? initialTickets
           : defaultTicketState.tickets,
     }),
+
+    updateOrAddTicket: (ticket: Ticket) =>
+  set((state) => {
+    // check if ticket already exists in state
+    const index = state.tickets.findIndex((t) => t.id === ticket.id);
+
+    if (index !== -1) {
+      // ✅ update existing ticket in state
+      const newTickets = [...state.tickets];
+      newTickets[index] = { ...newTickets[index], ...ticket };
+      return { tickets: newTickets };
+    } else {
+      // ✅ add new ticket
+      return {
+        tickets: [
+          ...state.tickets,
+          { ...ticket, id: Date.now() }, // generate temp id
+        ],
+      };
+    }
+  }),
+
 
   resetTickets: () => set(defaultTicketState),
 }));

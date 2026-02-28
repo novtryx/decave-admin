@@ -4,7 +4,7 @@ import { useTicketStore } from "@/store/create-events/Ticket";
 import { useSingleEventStore } from "@/store/events/SingleEvent";
 import { useLoadingStore } from "@/store/LoadingState";
 import { useSearchParams } from "next/navigation";
-import { EditEventAction } from "@/app/actions/event";
+import { CreateEventTicketAction, EditEventAction, UpdateEventTicketAction } from "@/app/actions/event";
 import Spinner from "@/components/Spinner";
 import { useState, useEffect } from "react";
 
@@ -26,7 +26,7 @@ interface ValidationErrors {
   };
 }
 
-export default function Tickets({ step, setStep }: StepProps) {
+export default function EditTicket({ step, setStep }: StepProps) {
   const searchParams = useSearchParams();
   const eventId = searchParams.get('id') ?? "";
 
@@ -56,21 +56,28 @@ export default function Tickets({ step, setStep }: StepProps) {
       console.log("Initializing Tickets with:", event.tickets);
       
       const initialTickets = event.tickets.map((ticket, index) => ({
-        id: Date.now() + index,
-        ticketName: ticket.ticketName || "",
-        price: ticket.price?.toString() || "",
-        quantity: ticket.availableQuantity?.toString() || ticket.initialQuantity?.toString() || "",
-        salesDate: "", // You can add this field if available in your backend
-        benefits: ticket.benefits?.length > 0
-          ? ticket.benefits.map((benefit, benefitIndex) => ({
-              id: Date.now() + index * 1000 + benefitIndex,
-              text: benefit || "",
-            }))
-          : [{ id: Date.now() + index * 1000, text: "" }],
-        isExpanded: false,
-        status: "Active" as const,
-        soldCount: (ticket.initialQuantity || 0) - (ticket.availableQuantity || 0),
-      }));
+  id: Date.now() + index, // frontend temp id
+  _id: ticket._id,        // ✅ keep MongoDB id
+  ticketName: ticket.ticketName || "",
+  price: ticket.price?.toString() || "",
+  quantity:
+    ticket.availableQuantity?.toString() ||
+    ticket.initialQuantity?.toString() ||
+    "",
+  salesDate: "",
+  benefits:
+    ticket.benefits?.length > 0
+      ? ticket.benefits.map((benefit, benefitIndex) => ({
+          id: Date.now() + index * 1000 + benefitIndex,
+          text: benefit || "",
+        }))
+      : [{ id: Date.now() + index * 1000, text: "" }],
+  isExpanded: false,
+  status: "Active" as const,
+  soldCount:
+    (ticket.initialQuantity || 0) -
+    (ticket.availableQuantity || 0),
+}));
 
       initializeTickets(initialTickets);
       setIsInitialized(true);
@@ -108,8 +115,8 @@ export default function Tickets({ step, setStep }: StepProps) {
       // Quantity validation
       if (!ticket.quantity || ticket.quantity.trim() === "") {
         ticketErrors.quantity = "Quantity is required";
-      } else if (Number(ticket.quantity) < 0) {
-        ticketErrors.quantity = "Quantity must be a positive number";
+      } else if (Number(ticket.quantity) <= -1) {
+        ticketErrors.quantity = "Quantity must be greater than -1";
       } else if (isNaN(Number(ticket.quantity))) {
         ticketErrors.quantity = "Quantity must be a valid number";
       } else if (!Number.isInteger(Number(ticket.quantity))) {
@@ -151,19 +158,132 @@ export default function Tickets({ step, setStep }: StepProps) {
   };
 
   /** Handle form submission */
-  const handleSaveTicket = async () => {
+//   const handleSaveTicket = async () => {
+//   startLoading();
+//   setSubmitError("");
+
+//   if (!validateForm()) {
+//     setSubmitError("Please fill in all required fields correctly");
+//     window.scrollTo({ top: 0, behavior: "smooth" });
+//     stopLoading();
+//     return;
+//   }
+
+//   if (!eventId.trim()) {
+//     setSubmitError("Event ID not found. Please start from the beginning.");
+//     stopLoading();
+//     return;
+//   }
+
+//   setIsSubmitting(true);
+
+//   try {
+//     const data = {
+//       stage: step,
+//       tickets: tickets.map((ticket) => ({
+//         _id: ticket._id,
+//         ticketName: ticket.ticketName.trim(),
+//         price: Number(ticket.price),
+//         currency: "NGN",
+//         initialQuantity: Number(ticket.quantity),
+//         availableQuantity: Number(ticket.quantity),
+//         benefits: ticket.benefits
+//           .map((benefit) => benefit.text.trim())
+//           .filter((text) => text !== ""),
+//       })),
+//     };
+
+//     console.log("Saving tickets data:", data);
+
+//     const res = await EditEventAction(data, eventId);
+
+//     // ✅ Check for error using 'in' operator
+//     if ('error' in res) {
+//       setSubmitError(res.error);
+//       console.log("Error:", res.error);
+//       return;
+//     }
+
+//     setStep(step + 1);
+//   } catch (error) {
+//     const errorMessage =
+//       error instanceof Error ? error.message : "An unexpected error occurred";
+//     setSubmitError(errorMessage);
+//     console.error("Error saving tickets:", error);
+//   } finally {
+//     setIsSubmitting(false);
+//     stopLoading();
+//   }
+// };
+
+// const handleSaveTicket = async () => {
+//   startLoading();
+//   setSubmitError("");
+
+//   if (!validateForm()) {
+//     setSubmitError("Please fill in all required fields correctly");
+//     stopLoading();
+//     return;
+//   }
+
+//   if (!eventId.trim()) {
+//     setSubmitError("Event ID not found.");
+//     stopLoading();
+//     return;
+//   }
+
+//   setIsSubmitting(true);
+
+//   try {
+//     for (const ticket of tickets) {
+//       // Only update tickets that already exist in DB
+//       if (!ticket._id) continue;
+
+//       const updateData = {
+//         ticketName: ticket.ticketName.trim(),
+//         price: Number(ticket.price),
+//         currency: "NGN",
+//         // initialQuantity: Number(ticket.quantity),
+//         availableQuantity: Number(ticket.quantity),
+//         benefits: ticket.benefits
+//           .map((b) => b.text.trim())
+//           .filter((text) => text !== ""),
+//       };
+
+//       const res = await UpdateEventTicketAction(
+//         eventId,
+//         ticket._id,
+//         updateData
+//       );
+
+//       if ("error" in res) {
+//         throw new Error(res.error);
+//       }
+//     }
+
+//     setStep(step + 1);
+//   } catch (error) {
+//     const errorMessage =
+//       error instanceof Error ? error.message : "Something went wrong";
+//     setSubmitError(errorMessage);
+//   } finally {
+//     setIsSubmitting(false);
+//     stopLoading();
+//   }
+// };
+
+const handleSaveTicket = async () => {
   startLoading();
   setSubmitError("");
 
   if (!validateForm()) {
     setSubmitError("Please fill in all required fields correctly");
-    window.scrollTo({ top: 0, behavior: "smooth" });
     stopLoading();
     return;
   }
 
   if (!eventId.trim()) {
-    setSubmitError("Event ID not found. Please start from the beginning.");
+    setSubmitError("Event ID not found.");
     stopLoading();
     return;
   }
@@ -171,42 +291,70 @@ export default function Tickets({ step, setStep }: StepProps) {
   setIsSubmitting(true);
 
   try {
-    const data = {
-      stage: step,
-      tickets: tickets.map((ticket) => ({
-        ticketName: ticket.ticketName.trim(),
-        price: Number(ticket.price),
-        currency: "NGN",
-        initialQuantity: Number(ticket.quantity),
-        availableQuantity: Number(ticket.quantity),
-        benefits: ticket.benefits
-          .map((benefit) => benefit.text.trim())
-          .filter((text) => text !== ""),
-      })),
-    };
+    for (const ticket of tickets) {
+      const benefits = ticket.benefits
+        .map((b) => b.text.trim())
+        .filter((text) => text !== "");
 
-    console.log("Saving tickets data:", data);
+      // ================================
+      // ✅ UPDATE EXISTING TICKET
+      // ================================
+      if (ticket._id) {
+        const updateData = {
+          ticketName: ticket.ticketName.trim(),
+          price: Number(ticket.price),
+          currency: "NGN",
+          availableQuantity: Number(ticket.quantity),
+          benefits,
+        };
 
-    const res = await EditEventAction(data, eventId);
+        const res = await UpdateEventTicketAction(
+          eventId,
+          ticket._id,
+          updateData
+        );
 
-    // ✅ Check for error using 'in' operator
-    if ('error' in res) {
-      setSubmitError(res.error);
-      console.log("Error:", res.error);
-      return;
+        if ("error" in res) {
+          throw new Error(res.error);
+        }
+      }
+
+      // ================================
+      // ✅ CREATE NEW TICKET
+      // ================================
+      else {
+        const createData = {
+          eventId,
+          ticketName: ticket.ticketName.trim(),
+          price: Number(ticket.price),
+          currency: "NGN",
+          initialQuantity: Number(ticket.quantity),
+          benefits,
+        };
+
+        const res = await CreateEventTicketAction(
+        
+          createData
+        );
+
+        if ("error" in res) {
+          throw new Error(res.error);
+        }
+      }
     }
 
     setStep(step + 1);
+
   } catch (error) {
     const errorMessage =
-      error instanceof Error ? error.message : "An unexpected error occurred";
+      error instanceof Error ? error.message : "Something went wrong";
     setSubmitError(errorMessage);
-    console.error("Error saving tickets:", error);
   } finally {
     setIsSubmitting(false);
     stopLoading();
   }
 };
+
 
 
   /** Get ticket index for error handling */

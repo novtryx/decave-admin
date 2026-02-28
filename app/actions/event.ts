@@ -10,6 +10,19 @@ interface EventDataType {
   data: Event[];
 }
 
+export interface TicketType{
+  eventId: string,
+  ticketId: string,
+  data: {
+    ticketName?: string;
+    price?: number;
+    currency?: string;
+    initialQuantity?: number;
+    availableQuantity?: number;
+    benefits?: string[];
+  }
+}
+
 interface SingleEventDataType {
   message: string;
   success: boolean;
@@ -82,6 +95,64 @@ export async function EditEventAction(
   return res.data;
 }
 
+export async function UpdateEventTicketAction(
+  eventId: string,
+  ticketId: string,
+  data: {
+    ticketName?: string;
+    price?: number;
+    currency?: string;
+    initialQuantity?: number;
+    availableQuantity?: number;
+    benefits?: string[];
+  }
+): Promise<
+  { message: string; success: boolean; data: Event } | { error: string }
+> {
+  const res = await protectedFetch<{
+    message: string;
+    success: boolean;
+    data: Event;
+  }>(`/events/${eventId}/tickets/${ticketId}`, {
+    method: "PATCH",
+    body: data,
+  });
+
+  if (!res.success) {
+    return { error: res.error };
+  }
+
+  return res.data;
+}
+
+
+export async function CreateEventTicketAction(
+  data: {
+    eventId: string;
+    ticketName: string;
+    price: number;
+    currency?: string;
+    initialQuantity: number;
+    benefits?: string[];
+  }
+): Promise<
+  { message: string; success: boolean; data: Event } | { error: string }
+> {
+  const res = await protectedFetch<{
+    message: string;
+    success: boolean;
+    data: Event;
+  }>(`/events/create-ticket/${data.eventId}`, {
+    method: "POST",
+    body: data,
+  });
+
+  if (!res.success) {
+    return { error: res.error };
+  }
+
+  return res.data;
+}
 
 // "use server";
 // import { protectedFetch } from "@/lib/protectedFetch";

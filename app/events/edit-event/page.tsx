@@ -21,6 +21,7 @@ import { useContactStore } from "@/store/create-events/contact";
 import { useAboutEventStore } from "@/store/create-events/AboutEvent";
 import { useTicketStore } from "@/store/create-events/Ticket";
 import { useSearchParams } from "next/navigation";
+import EditTicket from "./EditTicket";
 function EditEventContent() {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(0);
@@ -40,7 +41,7 @@ function EditEventContent() {
   const tabs = [
     { id: 1, name: "Event Details", component: <EventDetails step={step} setStep={setStep} /> },
     { id: 2, name: "About", component: <AboutEvent step={step} setStep={setStep} /> },
-    { id: 3, name: "Tickets", component: <Tickets step={step} setStep={setStep} /> },
+    { id: 3, name: "Tickets", component: <EditTicket step={step} setStep={setStep} /> },
     { id: 4, name: "Lineup", component: <Lineup step={step} setStep={setStep} /> },
     { id: 5, name: "Contact", component: <Contact step={step} setStep={setStep} /> },
   ];

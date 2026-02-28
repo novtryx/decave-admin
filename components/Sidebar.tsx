@@ -9,7 +9,7 @@ import {
   TbLayoutSidebarRightCollapse,
 } from "react-icons/tb";
 import { LuChartColumn, LuCreditCard } from "react-icons/lu";
-import { FaHandshakeAngle } from "react-icons/fa6";
+import { FaEnvelope, FaHandshakeAngle } from "react-icons/fa6";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -65,6 +65,12 @@ const pathname = usePathname();
       label: "Analytics",
       icon: <LuChartColumn size={22} />,
       href: "/analytics",
+    },
+    {
+      id: "newsletter",
+      label: "Newsletter",
+      icon: <FaEnvelope size={22} />,
+      href: "/newsletter",
     },
     {
       id: "settings",

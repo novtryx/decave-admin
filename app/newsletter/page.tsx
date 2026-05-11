@@ -3,6 +3,7 @@
 import { useState, useEffect, useTransition, useRef } from "react";
 import {
   getNewsletterEmails,
+  SendEmailPayload,
   sendNewsletterEmail,
   type NewsletterEmail,
 } from "../actions/newsletter";
@@ -10,8 +11,16 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { FaUsers } from "react-icons/fa6";
 import { IoSearch } from "react-icons/io5";
 import Spinner from "@/components/Spinner";
-import { MdOutlineChevronRight } from "react-icons/md";
+import { MdOutlineChevronRight, MdChevronLeft, MdChevronRight } from "react-icons/md";
 import { RiSendPlaneFill } from "react-icons/ri";
+
+
+
+
+
+
+
+const LIMIT = 25;
 
 const TOOLBAR_ACTIONS = [
   { cmd: "bold",                label: "B",       className: "font-bold" },
@@ -28,8 +37,19 @@ const HEADING_OPTIONS = [
   { tag: "p",  label: "¶"  },
 ];
 
+const DEFAULT_PAGINATION = {
+  total: 0,
+  totalPages: 1,
+  currentPage: 1,
+  limit: LIMIT,
+  hasNextPage: false,
+  hasPrevPage: false,
+};
+
 export default function NewsletterPage() {
   const [emails, setEmails]          = useState<NewsletterEmail[]>([]);
+  const [pagination, setPagination]  = useState(DEFAULT_PAGINATION);
+  const [page, setPage]              = useState(1);
   const [selected, setSelected]      = useState<Set<string>>(new Set());
   const [sendToAll, setSendToAll]    = useState(true);
   const [subject, setSubject]        = useState("");
@@ -41,13 +61,18 @@ export default function NewsletterPage() {
   const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setLoading(true);
     (async () => {
-      const res = await getNewsletterEmails();
-      if ("error" in res) showToast("error", res.error);
-      else setEmails(res.emails ?? []);
+      const res = await getNewsletterEmails({ page, limit: LIMIT });
+      if ("error" in res) {
+        showToast("error", res.error);
+      } else {
+        setEmails(res.emails ?? []);
+        setPagination(res.pagination);
+      }
       setLoading(false);
     })();
-  }, []);
+  }, [page]);
 
   function showToast(type: "success" | "error", msg: string) {
     setToast({ type, msg });
@@ -76,28 +101,30 @@ export default function NewsletterPage() {
   }
 
   function handleSend() {
-    if (!subject.trim()) return showToast("error", "Subject is required.");
-    if (!htmlBody.trim()) return showToast("error", "Email body cannot be empty.");
+  if (!subject.trim()) return showToast("error", "Subject is required.");
+  if (!htmlBody.trim()) return showToast("error", "Email body cannot be empty.");
 
-    const targetEmails = sendToAll
-      ? emails.map((e) => e.email)
-      : Array.from(selected);
-
-    if (targetEmails.length === 0) return showToast("error", "No recipients selected.");
-
-    startTransition(async () => {
-      const res = await sendNewsletterEmail({ subject, body: htmlBody, emails: targetEmails });
-      if ("error" in res) {
-        showToast("error", res.error);
-      } else {
-        showToast("success", res.message ?? `Sent to ${targetEmails.length} recipient(s).`);
-        setSubject("");
-        setHtmlBody("");
-        if (editorRef.current) editorRef.current.innerHTML = "";
-        setSelected(new Set());
-      }
-    });
+  if (!sendToAll && selected.size === 0) {
+    return showToast("error", "No recipients selected.");
   }
+
+  startTransition(async () => {
+    const payload: SendEmailPayload = sendToAll
+      ? { subject, body: htmlBody, sendToAll: true }          // backend fetches all
+      : { subject, body: htmlBody, emails: Array.from(selected) }; // specific selection
+
+    const res = await sendNewsletterEmail(payload);
+    if ("error" in res) {
+      showToast("error", res.error);
+    } else {
+      showToast("success", res.message ?? `Sent to ${res.sentCount} recipient(s).`);
+      setSubject("");
+      setHtmlBody("");
+      if (editorRef.current) editorRef.current.innerHTML = "";
+      setSelected(new Set());
+    }
+  });
+}
 
   function toggleEmail(email: string) {
     setSelected((prev) => {
@@ -119,17 +146,26 @@ export default function NewsletterPage() {
     });
   }
 
+  function getPageNumbers(): (number | "…")[] {
+    const { totalPages } = pagination;
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (page <= 4)               return [1, 2, 3, 4, 5, "…", totalPages];
+    if (page >= totalPages - 3)  return [1, "…", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, "…", page - 1, page, page + 1, "…", totalPages];
+  }
+
   const filteredEmails = emails.filter((e) =>
     e.email.toLowerCase().includes(search.toLowerCase())
   );
+
+  const globalIndex = (i: number) => (page - 1) * LIMIT + i + 1;
 
   return (
     <DashboardLayout>
 
       {/* ── Toast ── */}
       {toast && (
-        <div
-          className={`fixed top-20 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-medium shadow-2xl border backdrop-blur-sm transition-all
+        <div className={`fixed top-20 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-medium shadow-2xl border backdrop-blur-sm transition-all
             ${toast.type === "success"
               ? "bg-[#0d2b1f]/90 border-[#2a6b45] text-emerald-400"
               : "bg-[#2b0d0d]/90 border-[#6b2a2a] text-red-400"
@@ -147,13 +183,9 @@ export default function NewsletterPage() {
       <div className="mb-8 flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[11px] text-[#888] tracking-[0.15em] uppercase font-medium">
-              Admin
-            </span>
+            <span className="text-[11px] text-[#888] tracking-[0.15em] uppercase font-medium">Admin</span>
             <span className="text-[#444]">/</span>
-            <span className="text-[11px] text-[#888] tracking-[0.15em] uppercase font-medium">
-              Newsletter
-            </span>
+            <span className="text-[11px] text-[#888] tracking-[0.15em] uppercase font-medium">Newsletter</span>
           </div>
           <h1 className="text-2xl font-bold text-[#cca33a] tracking-tight">Newsletter</h1>
           <p className="text-sm text-gray-400 mt-1">Compose and send emails to your subscribers.</p>
@@ -165,7 +197,7 @@ export default function NewsletterPage() {
             <FaUsers />
           </div>
           <div>
-            <p className="text-lg font-bold text-white leading-none">{emails.length}</p>
+            <p className="text-lg font-bold text-white leading-none">{pagination.total}</p>
             <p className="text-[11px] text-gray-400 mt-0.5">Subscribers</p>
           </div>
         </div>
@@ -173,8 +205,6 @@ export default function NewsletterPage() {
 
       {/* ── Compose Card ── */}
       <div className="bg-[#151515] border border-[#ccc] rounded-2xl overflow-hidden mb-5">
-
-        {/* Card header */}
         <div className="px-6 py-4 border-b border-[#1e1e1e]">
           <h2 className="text-md font-semibold text-white">Compose Email</h2>
         </div>
@@ -183,8 +213,6 @@ export default function NewsletterPage() {
 
           {/* Subject + Recipients row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
-
-            {/* Subject */}
             <div className="flex flex-col gap-2">
               <label className="text-xs font-semibold text-[#a4a3a3] uppercase tracking-wider">Subject</label>
               <input
@@ -197,7 +225,6 @@ export default function NewsletterPage() {
               />
             </div>
 
-            {/* Recipients */}
             <div className="flex flex-col gap-2">
               <label className="text-xs font-semibold text-[#a4a3a3] uppercase tracking-wider">Recipients</label>
               <div className="grid grid-cols-2 gap-2 h-11.5">
@@ -209,7 +236,7 @@ export default function NewsletterPage() {
                       : "bg-transparent border-[#2a2a2a] text-[#555] hover:border-[#3a3a3a] hover:text-[#888]"
                     }`}
                 >
-                  All ({emails.length})
+                  All ({pagination.total})
                 </button>
                 <button
                   onClick={() => setSendToAll(false)}
@@ -229,13 +256,12 @@ export default function NewsletterPage() {
           <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold text-[#a4a3a3] uppercase tracking-wider">
               Body
-              <span className="ml-2 text-[#444] tracking-normal">{" "} (HTML supported)</span>
+              <span className="ml-2 text-[#444] tracking-normal"> (HTML supported)</span>
             </label>
 
             <div className="border border-[#2a2a2a] rounded-xl overflow-hidden focus-within:border-[#c9a84c]/40 transition-colors">
               {/* Toolbar */}
               <div className="flex items-center flex-wrap gap-0.5 px-3 py-2 bg-[#111] border-b border-[#1e1e1e]">
-                {/* Heading buttons */}
                 <div className="flex items-center gap-0.5 mr-1">
                   {HEADING_OPTIONS.map(({ tag, label }) => (
                     <button
@@ -250,7 +276,6 @@ export default function NewsletterPage() {
 
                 <div className="w-px h-4 bg-[#2a2a2a] mx-1 shrink-0" />
 
-                {/* Format buttons */}
                 <div className="flex items-center gap-0.5 mr-1">
                   {TOOLBAR_ACTIONS.map(({ cmd, label, className }) => (
                     <button
@@ -272,7 +297,6 @@ export default function NewsletterPage() {
 
                 <div className="w-px h-4 bg-[#2a2a2a] mx-1 shrink-0" />
 
-                {/* Raw HTML */}
                 <button
                   onClick={() => {
                     const raw = prompt("Paste raw HTML:");
@@ -306,7 +330,6 @@ export default function NewsletterPage() {
               />
             </div>
 
-            {/* Raw HTML preview */}
             {htmlBody && (
               <details className="mt-1 bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl px-4 py-3 group">
                 <summary className="text-xs text-[#444] cursor-pointer font-medium select-none hover:text-[#666] transition-colors list-none flex items-center gap-2">
@@ -325,8 +348,7 @@ export default function NewsletterPage() {
             onClick={handleSend}
             disabled={isPending}
             className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-sm font-semibold
-              bg-[#c9a84c] 
-              text-[#0e0e0e]
+              bg-[#c9a84c] text-[#0e0e0e]
               shadow-[0_4px_24px_rgba(201,168,76,0.25)] hover:shadow-[0_4px_32px_rgba(201,168,76,0.35)]
               disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#c9a84c] disabled:hover:shadow-none
               transition-all duration-150 cursor-pointer"
@@ -336,7 +358,7 @@ export default function NewsletterPage() {
             ) : (
               <div className="flex gap-2 bg-[#cca33a] text-[#ebe5e5] w-full justify-center text-lg items-center rounded-lg">
                 <RiSendPlaneFill />
-                Send{sendToAll ? ` to All (${emails.length})` : ` to Selected (${selected.size})`}
+                Send{sendToAll ? ` to All (${pagination.total})` : ` to Selected (${selected.size})`}
               </div>
             )}
           </button>
@@ -350,10 +372,14 @@ export default function NewsletterPage() {
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e1e1e]">
           <div>
             <h2 className="text-md font-semibold text-white">Subscribers</h2>
+            {!loadingEmails && pagination.total > 0 && (
+              <p className="text-[11px] text-[#444] mt-0.5">
+                Showing {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, pagination.total)} of {pagination.total}
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Search */}
             <div className="relative">
               <IoSearch className="absolute top-4 left-4 text-[#2a2a2a]" />
               <input
@@ -365,7 +391,6 @@ export default function NewsletterPage() {
               />
             </div>
 
-            {/* Select all (only in selected mode) */}
             {!sendToAll && filteredEmails.length > 0 && (
               <button
                 onClick={toggleAll}
@@ -400,19 +425,11 @@ export default function NewsletterPage() {
                 onClick={() => !sendToAll && toggleEmail(e.email)}
                 className={`flex items-center gap-4 px-6 py-3.5 transition-all duration-100
                   ${!sendToAll ? "cursor-pointer" : "cursor-default"}
-                  ${selected.has(e.email)
-                    ? "bg-[#c9a84c]/5"
-                    : "hover:bg-[#181818]"
-                  }`}
+                  ${selected.has(e.email) ? "bg-[#c9a84c]/5" : "hover:bg-[#181818]"}`}
               >
-                {/* Checkbox */}
                 {!sendToAll && (
-                  <div
-                    className={`w-4 h-4 rounded-[5px] border flex items-center justify-center shrink-0 transition-all duration-150
-                      ${selected.has(e.email)
-                        ? "bg-[#c9a84c] border-[#c9a84c]"
-                        : "border-[#333] bg-[#0e0e0e]"
-                      }`}
+                  <div className={`w-4 h-4 rounded-[5px] border flex items-center justify-center shrink-0 transition-all duration-150
+                    ${selected.has(e.email) ? "bg-[#c9a84c] border-[#c9a84c]" : "border-[#333] bg-[#0e0e0e]"}`}
                   >
                     {selected.has(e.email) && (
                       <svg className="w-2.5 h-2.5 text-[#0e0e0e]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
@@ -422,14 +439,10 @@ export default function NewsletterPage() {
                   </div>
                 )}
 
-                {/* Avatar */}
                 <div className="w-8 h-8 rounded-xl bg-[#1e1e1e] border border-[#2a2a2a] flex items-center justify-center shrink-0">
-                  <span className="text-xs font-semibold text-[#666]">
-                    {e.email[0].toUpperCase()}
-                  </span>
+                  <span className="text-xs font-semibold text-[#666]">{e.email[0].toUpperCase()}</span>
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-[#ccc] font-medium truncate">{e.email}</p>
                   {e.createdAt && (
@@ -441,10 +454,9 @@ export default function NewsletterPage() {
                   )}
                 </div>
 
-                {/* Row number */}
-                <span className="text-[11px] text-[#333] font-mono shrink-0">#{i + 1}</span>
+                {/* Global row number across all pages */}
+                <span className="text-[11px] text-[#333] font-mono shrink-0">#{globalIndex(i)}</span>
 
-                {/* "Will receive" badge */}
                 {sendToAll && (
                   <span className="text-[10px] font-semibold text-[#c9a84c] bg-[#c9a84c]/10 border border-[#c9a84c]/20 rounded-full px-2.5 py-1 tracking-wide shrink-0">
                     Will receive
@@ -454,7 +466,60 @@ export default function NewsletterPage() {
             ))
           )}
         </div>
+
+        {/* ── Pagination footer ── */}
+        {pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-[#1e1e1e]">
+            <p className="text-xs text-[#444]">
+              Page {pagination.currentPage} of {pagination.totalPages}
+            </p>
+
+            <div className="flex items-center gap-1">
+              {/* Prev */}
+              <button
+                onClick={() => setPage((p) => p - 1)}
+                disabled={!pagination.hasPrevPage || loadingEmails}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#2a2a2a] text-[#555]
+                  hover:border-[#c9a84c]/40 hover:text-[#c9a84c] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <MdChevronLeft className="text-base" />
+              </button>
+
+              {/* Page numbers */}
+              {getPageNumbers().map((p, i) =>
+                p === "…" ? (
+                  <span key={`ellipsis-${i}`} className="w-8 h-8 flex items-center justify-center text-[#333] text-xs select-none">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    disabled={loadingEmails}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium border transition-all
+                      ${page === p
+                        ? "bg-[#c9a84c]/10 border-[#c9a84c]/50 text-[#c9a84c]"
+                        : "border-[#2a2a2a] text-[#555] hover:border-[#c9a84c]/30 hover:text-[#c9a84c] disabled:opacity-30 disabled:cursor-not-allowed"
+                      }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+
+              {/* Next */}
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={!pagination.hasNextPage || loadingEmails}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#2a2a2a] text-[#555]
+                  hover:border-[#c9a84c]/40 hover:text-[#c9a84c] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <MdChevronRight className="text-base" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
-}   
+}

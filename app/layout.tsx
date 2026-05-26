@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Philosopher } from "next/font/google";
 import "./globals.css";
+import Providers from "./provider";
 
 const philosopher = Philosopher({
   weight: ['400', '700'],
@@ -24,7 +25,10 @@ export default function RootLayout({
       <body
         className={`${philosopher.variable} font-philosopher antialiased`}
       >
+        <Providers>
+
         {children}
+        </Providers>
       </body>
     </html>
   );

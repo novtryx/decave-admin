@@ -1,4 +1,4 @@
-import { fetcher } from "./fetcher";
+import { fetcher, fetcher2 } from "./fetcher";
 import { getAccessToken } from "./authCookies";
 
 type ProtectedFetchError = {
@@ -21,6 +21,28 @@ export async function protectedFetch<T>(
   }
 
   return fetcher<T>(url, {
+    ...options,
+    headers: {
+      ...options?.headers,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function protectedFetch2<T>(
+  url: string,
+  options?: Parameters<typeof fetcher>[1]
+): Promise<{ success: true; data: T } | ProtectedFetchError> {
+  const token = await getAccessToken();
+
+  if (!token) {
+    return {
+      success: false as const,
+      error: "Not authenticated. Please log in.",
+    };
+  }
+
+  return fetcher2<T>(url, {
     ...options,
     headers: {
       ...options?.headers,

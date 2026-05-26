@@ -2,6 +2,7 @@
 // ==================== EVENTS ACTIONS ====================
 "use server";
 import { protectedFetch } from "@/lib/protectedFetch";
+import { publicFetch2 } from "@/lib/publicFetch";
 import { Event } from "@/types/eventsType";
 
 interface EventDataType {
@@ -154,63 +155,28 @@ export async function CreateEventTicketAction(
   return res.data;
 }
 
-// "use server";
-// import { protectedFetch } from "@/lib/protectedFetch";
-// import { Event } from "@/types/eventsType";
 
-// interface eventDataType{
-//     message: string;
-//     success: boolean;
-//     data: Event[]
-// }
-// interface singleEventDataType{
-//     message: string;
-//     success: boolean;
-//     data: Event
-// }
-// export async function getAllEvents(
-  
-// ) {
-//   const res = await protectedFetch<eventDataType>("/events", {
-//     method: "GET",
-   
-//   });
-//   return res;
-// }
 
-// export async function getEventById(
-//   id: string
-// ) {
-//   const res = await protectedFetch<singleEventDataType>(`/events/${id}`, {
-//     method: "GET",
-   
-//   });
-//   return res;
-// }
+export async function getOtherEvents(page= 1): Promise<any | { error: string }> {
+  const res = await publicFetch2<EventDataType>(`/events/admin/all-stats?page=${page}&limit=20`, {
+    method: "GET",
+  });
 
-// export async function CreateEventAction(data: any){
-//     const res = await protectedFetch<{
-//        message: string;
-//     success: boolean;
-//     data: Event
-//     }>("/events", {
-//         method: "POST",
-//          body: {eventDetails:data},
-//     })
+  if (!res.success) {
+    return { error: res.error };
+  }
 
-//     return res
-// }
+  return res.data;
+}
 
-// export async function EditEventAction(data: any, id:string){
-//     const res = await protectedFetch<{
-//        message: string;
-//     success: boolean;
-//     data: Event
-//     }>(`/events/${id}`, {
-//         method: "PUT",
-//          body: data,
-//     })
+export async function approveEvent(id: number, approved: boolean): Promise<any | { error: string }> {
+  const res = await publicFetch2<EventDataType>(`/events/${id}/toggle-approval`, {
+    method: "PATCH",
+  });
 
-//     return res
-// }
+  if (!res.success) {
+    return { error: res.error };
+  }
 
+  return res.data;
+}

@@ -49,6 +49,12 @@ const pathname = usePathname();
       href: "/events",
     },
     {
+      id: "other-events",
+      label: "Other Events",
+      icon: <MdOutlineCalendarMonth size={22} />,
+      href: "/other-events",
+    },
+    {
       id: "sales",
       label: "Sales & Transactions",
       icon: <LuCreditCard size={22} />,

@@ -291,20 +291,44 @@ export default function Tickets({ step, setStep }: StepProps) {
                         }`}
                       >
                         <option value="" className="bg-gray-900">
-                          e.g. Early Bird, Regular, VIP, Platinum
-                        </option>
-                        <option value="Early Bird" className="bg-gray-900">
-                          Early Bird
-                        </option>
-                        <option value="Regular" className="bg-gray-900">
-                          Regular
-                        </option>
-                        <option value="VIP" className="bg-gray-900">
-                          VIP
-                        </option>
-                        <option value="Platinum" className="bg-gray-900">
-                          Platinum
-                        </option>
+  e.g. Early Bird, Regular, VIP, Platinum, Early Access
+</option>
+
+<option value="Early Bird" className="bg-gray-900">
+  Early Bird
+</option>
+
+<option value="Regular" className="bg-gray-900">
+  Regular
+</option>
+
+<option value="VIP" className="bg-gray-900">
+  VIP
+</option>
+
+<option value="Platinum" className="bg-gray-900">
+  Platinum
+</option>
+
+<option value="Early Access" className="bg-gray-900">
+  Early Access
+</option>
+
+<option value="First Release" className="bg-gray-900">
+  First Release
+</option>
+
+<option value="Standard" className="bg-gray-900">
+  Standard
+</option>
+
+<option value="Final Release" className="bg-gray-900">
+  Final Release
+</option>
+
+<option value="Gate Access" className="bg-gray-900">
+  Gate Access
+</option>
                       </select>
                       <IoChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     </div>

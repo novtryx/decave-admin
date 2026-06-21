@@ -473,6 +473,9 @@ const handleSaveTicket = async () => {
 <option value="Final Release" className="bg-gray-900">
   Final Release
 </option>
+    <option value="Rebel Trio (Group of 3)" className="bg-gray-900">
+  Rebel Trio (Group of 3)
+</option>
 
 <option value="Gate Access" className="bg-gray-900">
   Gate Access

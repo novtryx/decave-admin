@@ -1,4 +1,4 @@
-import { Transaction } from "@/types/transactionsType";
+import { Transaction, EventTransactionSummary } from "@/types/transactionsType";
 import { Event, TotalTicketStats } from "@/types/eventsType";
 
 //calculate totaltickets
@@ -65,7 +65,74 @@ export const formatDate = (date: Date | string): string => {
 };
 
 /**
- * Search transactions by event title, transaction ID, buyer email, or ticket type
+ * Search events by title, venue, or event type
+ */
+export function searchEvents(events: Event[], searchQuery: string): Event[] {
+  if (!searchQuery.trim()) {
+    return events;
+  }
+
+  const query = searchQuery.toLowerCase().trim();
+
+  return events.filter((event) => {
+    const { eventTitle, venue, eventType } = event.eventDetails;
+    return (
+      eventTitle.toLowerCase().includes(query) ||
+      venue.toLowerCase().includes(query) ||
+      eventType.toLowerCase().includes(query)
+    );
+  });
+}
+
+/**
+ * Sort events by their start date
+ */
+export function sortEventsByDate(
+  events: Event[],
+  sortOrder: "all" | "new" | "old"
+): Event[] {
+  if (sortOrder === "all") {
+    return events;
+  }
+
+  const sorted = [...events].sort((a, b) => {
+    const dateA = new Date(a.eventDetails.startDate).getTime();
+    const dateB = new Date(b.eventDetails.startDate).getTime();
+    return sortOrder === "new" ? dateB - dateA : dateA - dateB;
+  });
+
+  return sorted;
+}
+
+/**
+ * Converts an ISO date string (or null/undefined) to the
+ * "YYYY-MM-DD" format expected by <input type="date" />.
+ */
+export const toDateInputValue = (iso?: string | null): string => {
+  if (!iso) return "";
+  return new Date(iso).toISOString().slice(0, 10);
+};
+export function searchEventSummaries(
+  events: EventTransactionSummary[],
+  searchQuery: string
+): EventTransactionSummary[] {
+  if (!searchQuery.trim()) {
+    return events;
+  }
+
+  const query = searchQuery.toLowerCase().trim();
+
+  return events.filter(
+    (event) =>
+      event.eventTitle.toLowerCase().includes(query) ||
+      event.venue.toLowerCase().includes(query)
+  );
+}
+
+/**
+ * Search transactions WITHIN a single event by transaction ID, buyer
+ * email, or ticket type. (Event title/venue no longer apply here —
+ * the table is already scoped to one event.)
  */
 export function searchTransactions(
   transactions: Transaction[],
@@ -78,33 +145,13 @@ export function searchTransactions(
   const query = searchQuery.toLowerCase().trim();
 
   return transactions.filter((transaction) => {
-    // Search in transaction ID
     const matchesTxnId = transaction.txnId.toLowerCase().includes(query);
-
-    // Search in event title
-    const matchesEventTitle = transaction.event.eventTitle
-      .toLowerCase()
-      .includes(query);
-
-    // Search in buyer email
-    // const matchesBuyer = transaction.buyers.toLowerCase().includes(query);
-    const matchesBuyer = transaction.buyerEmail.toLowerCase().includes(query.toLowerCase());
-
-    // Search in ticket type
+    const matchesBuyer = transaction.buyerEmail.toLowerCase().includes(query);
     const matchesTicketType = transaction.ticket.ticketName
       .toLowerCase()
       .includes(query);
 
-    // Search in venue
-    const matchesVenue = transaction.event.venue.toLowerCase().includes(query);
-
-    return (
-      matchesTxnId ||
-      matchesEventTitle ||
-      matchesBuyer ||
-      matchesTicketType ||
-      matchesVenue
-    );
+    return matchesTxnId || matchesBuyer || matchesTicketType;
   });
 }
 
@@ -195,53 +242,40 @@ function formatDateForExport(dateString: string): string {
 }
 
 /**
- * Convert transactions to CSV format
+ * Convert transactions (scoped to a single event) to CSV format
  */
 export function transactionsToCSV(transactions: Transaction[]): string {
-  // Define CSV headers
   const headers = [
     "Transaction ID",
-    "Event Title",
-    "Event Type",
-    "Venue",
     "Ticket Type",
     "Price",
     "Currency",
-    "Quantity Sold",
-    "Available",
+    "Quantity",
+    "Amount",
     "Buyer Email",
+    "Checked In",
     "Status",
     "Payment ID",
     "Date",
   ];
 
-  // Convert transactions to CSV rows
-  const rows = transactions.map((transaction) => {
-    const quantitySold =
-      transaction.ticket.initialQuantity - transaction.ticket.availableQuantity;
+  const rows = transactions.map((transaction) => [
+    transaction.txnId,
+    transaction.ticket.ticketName,
+    transaction.ticket.price,
+    transaction.ticket.currency,
+    transaction.quantity,
+    transaction.revenue,
+    transaction.buyerEmail,
+    `${transaction.checkedInCount}/${transaction.quantity}`,
+    transaction.status,
+    transaction.paystackId,
+    formatDateForExport(transaction.createdAt),
+  ]);
 
-    return [
-      transaction.txnId,
-      transaction.event.eventTitle,
-      transaction.event.eventType,
-      transaction.event.venue,
-      transaction.ticket.ticketName,
-      transaction.ticket.price,
-      transaction.ticket.currency,
-      quantitySold,
-      transaction.ticket.availableQuantity,
-      transaction.buyerEmail,
-      transaction.status,
-      transaction.paystackId,
-      formatDateForExport(transaction.createdAt),
-    ];
-  });
-
-  // Escape CSV values (handle commas, quotes, newlines)
-  const escapeCSVValue = (value: any): string => {
+  const escapeCSVValue = (value: string | number | null | undefined): string => {
     if (value === null || value === undefined) return "";
     const stringValue = String(value);
-    // If value contains comma, quote, or newline, wrap in quotes and escape quotes
     if (
       stringValue.includes(",") ||
       stringValue.includes('"') ||
@@ -252,7 +286,6 @@ export function transactionsToCSV(transactions: Transaction[]): string {
     return stringValue;
   };
 
-  // Combine headers and rows
   const csvContent = [
     headers.map(escapeCSVValue).join(","),
     ...rows.map((row) => row.map(escapeCSVValue).join(",")),
@@ -284,68 +317,45 @@ export function downloadCSV(
   link.click();
   document.body.removeChild(link);
 
-  // Clean up the URL object
   URL.revokeObjectURL(url);
 }
 
 /**
- * Convert transactions to Excel-compatible format (TSV - Tab Separated Values)
- * TSV is better for Excel as it handles commas in data better
+ * Convert transactions (scoped to a single event) to Excel-compatible
+ * TSV format
  */
 export function transactionsToTSV(transactions: Transaction[]): string {
-  // Define TSV headers
   const headers = [
     "Transaction ID",
-    "Event Title",
-    "Event Type",
-    "Venue",
-    "Address",
     "Ticket Type",
     "Price",
     "Currency",
-    "Quantity Sold",
-    "Available Quantity",
-    "Total Quantity",
+    "Quantity",
+    "Amount",
     "Buyer Email",
+    "Checked In",
     "Status",
     "Payment ID",
     "Date",
-    "Event Start Date",
-    "Event End Date",
   ];
 
-  // Convert transactions to TSV rows
-  const rows = transactions.map((transaction) => {
-    const quantitySold =
-      transaction.ticket.initialQuantity - transaction.ticket.availableQuantity;
+  const rows = transactions.map((transaction) => [
+    transaction.txnId,
+    transaction.ticket.ticketName,
+    transaction.ticket.price,
+    transaction.ticket.currency,
+    transaction.quantity,
+    transaction.revenue,
+    transaction.buyerEmail,
+    `${transaction.checkedInCount}/${transaction.quantity}`,
+    transaction.status.toUpperCase(),
+    transaction.paystackId,
+    formatDateForExport(transaction.createdAt),
+  ]);
 
-    return [
-      transaction.txnId,
-      transaction.event.eventTitle,
-      transaction.event.eventType,
-      transaction.event.venue,
-      transaction.event.address,
-      transaction.ticket.ticketName,
-      transaction.ticket.price,
-      transaction.ticket.currency,
-      quantitySold,
-      transaction.ticket.availableQuantity,
-      transaction.ticket.initialQuantity,
-      transaction.buyerEmail,
-      transaction.status.toUpperCase(),
-      transaction.paystackId,
-      formatDateForExport(transaction.createdAt),
-      formatDateForExport(transaction.event.startDate),
-      formatDateForExport(transaction.event.endDate),
-    ];
-  });
-
-  // Combine headers and rows with tabs
   const tsvContent = [
     headers.join("\t"),
-    ...rows.map((row) =>
-      row.map((value) => String(value ?? "")).join("\t")
-    ),
+    ...rows.map((row) => row.map((value) => String(value ?? "")).join("\t")),
   ].join("\n");
 
   return tsvContent;
@@ -376,7 +386,6 @@ export function downloadExcel(
   link.click();
   document.body.removeChild(link);
 
-  // Clean up the URL object
   URL.revokeObjectURL(url);
 }
 
@@ -403,7 +412,6 @@ export function downloadJSON(
   link.click();
   document.body.removeChild(link);
 
-  // Clean up the URL object
   URL.revokeObjectURL(url);
 }
 

@@ -1,74 +1,3 @@
-// "use server";
-
-// import { protectedFetch } from "@/lib/protectedFetch";
-
-// /* =======================
-//    Ticket sales breakdown
-// ======================= */
-// export interface TicketSalesDetail {
-//   ticketsSold: number;
-//   revenue: number;
-//   eventId: string;
-//   eventTitle: string;
-//   ticketPrice: number;
-// }
-
-// /* =======================
-//    Generic metric structure
-// ======================= */
-// export interface MetricWithChange {
-//   value: number;
-//   changePercent: number;
-// }
-
-// /* =======================
-//    Analytics response data
-// ======================= */
-// export interface AnalyticsData {
-//   totalEvents: number;
-//   totalTickets: number;
-//   totalRevenue: number;
-//   totalPublishedEvents: number;
-
-//   ticketSalesDetails: TicketSalesDetail[];
-
-//   monthRevenue: Record<string, number>; // e.g. { "2026-1": 2875000 }
-//   monthTickets: Record<string, number>; // e.g. { "2026-1": 115 }
-
-//   revenueThisMonth: MetricWithChange;
-//   ticketsThisMonth: MetricWithChange;
-
-//   yearRevenue: Record<string, number>; // e.g. { "2026": 3275000 }
-//   yearTickets: Record<string, number>; // e.g. { "2026": 171 }
-
-//   revenueThisYear: MetricWithChange;
-//   ticketsThisYear: MetricWithChange;
-
-//   conversionThisMonth: MetricWithChange;
-//   conversionThisYear: MetricWithChange;
-// }
-
-// /* =======================
-//    API response wrapper
-// ======================= */
-// export interface AnalyticsResponse {
-//   success: boolean;
-//   data: AnalyticsData;
-// }
-
-// /* =======================
-//    Server Action
-// ======================= */
-// export async function getAnalytics() {
-//   const res = await protectedFetch<AnalyticsResponse>("/analytics", {
-//     method: "GET",
-//   });
-
-//   return res;
-// }
-
-
-
 // ==================== ANALYTICS ACTIONS ====================
 "use server";
 
@@ -79,7 +8,9 @@ export interface TicketSalesDetail {
   revenue: number;
   eventId: string;
   eventTitle: string;
+  ticketTitle: string;
   ticketPrice: number;
+  currency: string;
 }
 
 export interface MetricWithChange {
@@ -87,12 +18,56 @@ export interface MetricWithChange {
   changePercent: number;
 }
 
+export interface TopEventByRevenue {
+  eventId: string;
+  eventTitle: string;
+  revenue: number;
+  ticketsSold: number;
+}
+
+export interface CheckInStats {
+  totalSold: number;
+  totalCheckedIn: number;
+  checkInRate: number;
+  eventsConsidered: number;
+}
+
+export interface PaymentHealthStats {
+  totalCompleted: number;
+  totalPending: number;
+  totalFailed: number;
+  completionRate: number;
+}
+
+export interface InfluencerStats {
+  influencerRevenue: number;
+  influencerTickets: number;
+  organicRevenue: number;
+  organicTickets: number;
+  influencerRevenueSharePercent: number;
+}
+
+export interface TicketSaleWindowStats {
+  onSale: number;
+  notYetOpen: number;
+  closed: number;
+  noWindowSet: number;
+}
+
 export interface AnalyticsData {
   totalEvents: number;
   totalTickets: number;
   totalRevenue: number;
   totalPublishedEvents: number;
+  totalCompletedTransactions: number;
+  avgOrderValue: number;
+  avgTicketsPerOrder: number;
   ticketSalesDetails: TicketSalesDetail[];
+  topEventsByRevenue: TopEventByRevenue[];
+  checkInStats: CheckInStats;
+  paymentHealth: PaymentHealthStats;
+  influencerStats: InfluencerStats;
+  ticketSaleWindowStats: TicketSaleWindowStats;
   monthRevenue: Record<string, number>;
   monthTickets: Record<string, number>;
   revenueThisMonth: MetricWithChange;
@@ -110,7 +85,6 @@ export interface AnalyticsResponse {
   data: AnalyticsData;
 }
 
-// ✅ Add return type with error handling
 export async function getAnalytics(): Promise<AnalyticsResponse | { error: string }> {
   const res = await protectedFetch<AnalyticsResponse>("/analytics", {
     method: "GET",

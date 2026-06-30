@@ -10,6 +10,7 @@ import {
 } from "react-icons/tb";
 import { LuChartColumn, LuCreditCard } from "react-icons/lu";
 import { FaEnvelope, FaHandshakeAngle } from "react-icons/fa6";
+import { HiOutlineSparkles } from "react-icons/hi2";
 import { HiOutlineUserGroup } from "react-icons/hi2";       // Influencers
 import { PiMoneyWavyLight } from "react-icons/pi";          // Influencer withdrawals
 import { MdOutlineStorefront } from "react-icons/md";       // Other Events
@@ -119,6 +120,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           label: "Newsletter",
           icon: <FaEnvelope size={22} />,
           href: "/newsletter",
+        },
+        {
+          id: "event-feedback",
+          label: "Event Feedback",
+          icon: <HiOutlineSparkles size={22} />,
+          href: "/event-feedback",
         },
       ],
     },

@@ -1,10 +1,17 @@
 // Dashboard-specific type definitions
 
+import { Event } from "./eventsType";
+
+export type DashboardRange = "month" | "3months" | "year" | "all";
+
 export interface MetricData {
-  currentMonth: number;
-  lastMonth: number;
-  percentageChange: number;
-  trend: "up" | "down" | "stable";
+  currentPeriod: number;
+  // `null` only when range === "all" — there's no meaningful "all
+  // time before all time" to compare against, so the backend omits
+  // the comparison entirely rather than faking a 0% change.
+  previousPeriod: number | null;
+  percentageChange: number | null;
+  trend: "up" | "down" | "stable" | null;
   currency?: string;
 }
 
@@ -21,6 +28,7 @@ export interface RecentActivity {
 
 export interface DashboardData {
   success: boolean;
+  range: DashboardRange;
   upcomingEvents: {
     events: Event[];
     pagination: {

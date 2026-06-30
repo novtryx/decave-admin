@@ -11,15 +11,17 @@ import { AiOutlineEye } from "react-icons/ai";
 import { FiEdit2 } from "react-icons/fi";
 import { LuChevronsUpDown } from "react-icons/lu";
 import { RiDeleteBin6Line } from "react-icons/ri";
-import { TbCopy } from "react-icons/tb";
 
 type EventStatus = "live" | "draft" | "past" | "upcoming";
 
 interface EventTableProps {
   events: Event[];
+  // Real revenue per event, keyed by event _id (from the transaction
+  // summary endpoint). Events not present in the map simply have no
+  // recorded sales yet.
+  revenueByEventId?: Record<string, number>;
   onView?: (event: Event) => void;
   onEdit?: (event: Event) => void;
-  onCopy?: (event: Event) => void;
   onDelete?: (event: Event) => void;
 }
 
@@ -32,9 +34,9 @@ const SortableHeader = ({ label }: { label: string }) => (
 
 export const EventTable: React.FC<EventTableProps> = ({
   events,
+  revenueByEventId = {},
   onView,
   onEdit,
-  onCopy,
   onDelete,
 }) => {
   const getStatusBadge = (status: EventStatus) => {
@@ -69,6 +71,7 @@ export const EventTable: React.FC<EventTableProps> = ({
   };
 
   const getProgressPercentage = (sold: number, total: number) => {
+    if (total === 0) return 0;
     return (sold / total) * 100;
   };
 
@@ -101,90 +104,78 @@ export const EventTable: React.FC<EventTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {events.map((event) => (
-            <tr
-              key={event._id}
-              className="border-b border-gray-800/50 hover:bg-gray-900/30 transition-colors"
-            >
-              <td className="p-4 text-white font-medium">
-                {event.eventDetails.eventTitle}
-              </td>
-              <td className="p-4">{getStatusBadge(getEventStatus(event))}</td>
-              <td className="p-4 text-gray-300">
-                {formatDate(event.eventDetails.endDate)}
-              </td>
-              <td className="p-4 text-gray-300">{event.eventDetails.venue}</td>
-              <td className="p-4">
-                <div className="flex flex-col gap-1">
-                  <span className="text-white font-medium">
-                    {calculateTotalTickets(event.tickets).totalSoldTickets} /{" "}
-                    {calculateTotalTickets(event.tickets).totalInitialTickets}
-                  </span>
-                  <div className="w-32 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 rounded-full transition-all"
-                      style={{
-                        width: `${getProgressPercentage(calculateTotalTickets(event.tickets).totalSoldTickets, calculateTotalTickets(event.tickets).totalInitialTickets)}%`,
-                      }}
-                    ></div>
+          {events.map((event) => {
+            const ticketStats = calculateTotalTickets(event.tickets);
+            const revenue = revenueByEventId[event._id];
+
+            return (
+              <tr
+                key={event._id}
+                className="border-b border-gray-800/50 hover:bg-gray-900/30 transition-colors"
+              >
+                <td className="p-4 text-white font-medium">
+                  {event.eventDetails.eventTitle}
+                </td>
+                <td className="p-4">{getStatusBadge(getEventStatus(event))}</td>
+                <td className="p-4 text-gray-300">
+                  {formatDate(event.eventDetails.endDate)}
+                </td>
+                <td className="p-4 text-gray-300">{event.eventDetails.venue}</td>
+                <td className="p-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-white font-medium">
+                      {ticketStats.totalSoldTickets} / {ticketStats.totalInitialTickets}
+                    </span>
+                    <div className="w-32 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full transition-all"
+                        style={{
+                          width: `${getProgressPercentage(
+                            ticketStats.totalSoldTickets,
+                            ticketStats.totalInitialTickets
+                          )}%`,
+                        }}
+                      ></div>
+                    </div>
                   </div>
-                </div>
-              </td>
-              {/* <td className="p-4 text-white font-medium">{formatCurrency(event.revenue)}</td> */}
-              <td className="p-4 text-white font-medium">{"#20,000"}</td>
-              <td className="p-4">
-                <div className="flex items-center gap-3">
-                  {onView && (
-                    <button
-                      onClick={() => onView(event)}
-                      className="text-gray-400 hover:text-white transition-colors"
-                      aria-label="View event"
-                    >
-                      <AiOutlineEye size={18} />
-                    </button>
-                  )}
-                  {/* {onEdit && getEventStatus(event) === 'draft' && (
-                    <button
-                      onClick={() => onEdit(event)}
-                      className="text-gray-400 hover:text-white transition-colors"
-                      aria-label="Edit event"
-                    >
-                      <FiEdit2 size={18} />
-                    </button>
-                  )} */}
-                  {onEdit && (
-                    <button
-                      onClick={() => onEdit(event)}
-                      className="text-gray-400 hover:text-white transition-colors"
-                      aria-label="Edit event"
-                    >
-                      <FiEdit2 size={18} />
-                    </button>
-                  )}
-                  {onCopy &&
-                    (getEventStatus(event) === "upcoming" ||
-                      getEventStatus(event) === "draft") && (
+                </td>
+                <td className="p-4 text-white font-medium">
+                  {revenue !== undefined ? formatCurrency(revenue) : "—"}
+                </td>
+                <td className="p-4">
+                  <div className="flex items-center gap-3">
+                    {onView && (
                       <button
-                        onClick={() => onCopy(event)}
+                        onClick={() => onView(event)}
                         className="text-gray-400 hover:text-white transition-colors"
-                        aria-label="Copy event"
+                        aria-label="View event"
                       >
-                        <TbCopy size={18} />
+                        <AiOutlineEye size={18} />
                       </button>
                     )}
-                  {onDelete && (
-                    <button
-                      onClick={() => onDelete(event)}
-                      className="text-[#EF4444] transition-colors"
-                      aria-label="Delete event"
-                    >
-                      <RiDeleteBin6Line size={18} />
-                    </button>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
+                    {onEdit && (
+                      <button
+                        onClick={() => onEdit(event)}
+                        className="text-gray-400 hover:text-white transition-colors"
+                        aria-label="Edit event"
+                      >
+                        <FiEdit2 size={18} />
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        onClick={() => onDelete(event)}
+                        className="text-[#EF4444] transition-colors"
+                        aria-label="Delete event"
+                      >
+                        <RiDeleteBin6Line size={18} />
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

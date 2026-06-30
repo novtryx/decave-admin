@@ -19,7 +19,6 @@ import { useEventStore } from "@/store/create-events/EventDetails";
 import { useLineupStore } from "@/store/create-events/LineUp";
 import { useContactStore } from "@/store/create-events/contact";
 import { useAboutEventStore } from "@/store/create-events/AboutEvent";
-import { useTicketStore } from "@/store/create-events/Ticket";
 import { useSearchParams } from "next/navigation";
 import EditTicket from "./EditTicket";
 function EditEventContent() {
@@ -34,7 +33,6 @@ function EditEventContent() {
   // Get all individual stores
   const eventDetailsStore = useEventStore();
   const aboutEventStore = useAboutEventStore();
-  const ticketStore = useTicketStore();
   const lineupStore = useLineupStore();
   const contactStore = useContactStore();
 
@@ -107,25 +105,13 @@ useEffect(() => {
       });
     }
 
-    // Populate Ticket Store
-    if (event.tickets && event.tickets.length > 0) {
-      const mappedTickets = event.tickets.map((ticket, index) => ({
-        id: Date.now() + index,
-        ticketName: ticket.ticketName,
-        price: ticket.price.toString(),
-        quantity: ticket.availableQuantity.toString(),
-        salesDate: "",
-        benefits: ticket.benefits.map((text, benefitIndex) => ({ 
-          id: Date.now() + index + benefitIndex,
-          text 
-        })),
-        isExpanded: false,
-        status: "Active" as const,
-        soldCount: 0,
-      }));
-      
-      ticketStore.initializeTickets(mappedTickets);
-    }
+    // Ticket data is intentionally NOT populated here. EditTicket.tsx
+    // owns ticket initialization on its own (it preserves each
+    // ticket's real `_id`, which this mapping used to silently drop —
+    // that caused already-sold tickets to be rejected or, worse,
+    // re-created as duplicates when saved through the bulk path
+    // below). Tickets are now only ever read/written via the
+    // dedicated per-ticket endpoints triggered from the Tickets tab.
 
     // ✅ FIXED: Only populate lineup if valid artists exist
     if (event.artistLineUp && event.artistLineUp.length > 0) {
@@ -204,14 +190,13 @@ const handleSaveChanges = async () => {
           supportingImage: section.image?.url || "",
         })),
       },
-      tickets: ticketStore.tickets.map((ticket) => ({
-        ticketName: ticket.ticketName,
-        price: parseFloat(ticket.price) || 0,
-        currency: "NGN",
-        initialQuantity: parseInt(ticket.quantity) || 0,
-        availableQuantity: parseInt(ticket.quantity) || 0,
-        benefits: ticket.benefits.map((b) => b.text).filter(Boolean),
-      })),
+      // Tickets are deliberately NOT included here. Sending the full
+      // tickets array through this general update would either get
+      // rejected (the backend now refuses to silently drop a ticket
+      // that already has completed sales) or, if `_id` wasn't
+      // preserved, would orphan existing transactions/QR codes/check-ins
+      // by re-creating tickets with new ids. Ticket changes are saved
+      // independently, per-ticket, from the Tickets tab.
       // ✅ Only include valid artists
       artistLineUp: validArtists.map((artist) => ({
         artistImage: artist.imageUrl || "",

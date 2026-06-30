@@ -1,45 +1,17 @@
 import React from 'react';
 import { LuChevronsUpDown } from 'react-icons/lu';
-
-export interface Transaction {
-  _id: string;
-  txnId: string;
-  event: {
-    eventType: string;
-    eventTitle: string;
-    eventTheme: string;
-    supportingText: string;
-    eventBanner: string;
-    startDate: string;
-    endDate: string;
-    venue: string;
-    address: string;
-    brandColor: {
-      primaryColor: string;
-      secondaryColor: string;
-    };
-    eventVisibility: boolean;
-  };
-  paystackId: string;
-  ticket: {
-    ticketName: string;
-    price: number;
-    currency: string;
-    initialQuantity: number;
-    availableQuantity: number;
-    benefits: string[];
-    _id: string;
-  };
-  buyerEmail: string; // Changed from buyers to buyerEmail
-  status: 'completed' | 'pending' | 'failed';
-  createdAt: string;
-  quantity?: number;
-  revenue?: number; // Added revenue field
-}
+import { Transaction } from '@/types/transactionsType';
 
 interface TransactionTableProps {
   transactions: Transaction[];
 }
+
+const SortableHeader = ({ label }: { label: string }) => (
+  <div className="flex items-center gap-1 cursor-pointer select-none">
+    <span>{label}</span>
+    <LuChevronsUpDown className="w-4 h-4 text-gray-500" />
+  </div>
+);
 
 export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions }) => {
   const getStatusColor = (status: string) => {
@@ -72,24 +44,6 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
     });
   };
 
-  // Get quantity for a transaction
-  const getTransactionQuantity = (transaction: Transaction): number => {
-    // If quantity is explicitly provided, use it
-    if (transaction.quantity && typeof transaction.quantity === 'number') {
-      return transaction.quantity;
-    }
-    
-    // Default to 1 ticket per transaction
-    return 1;
-  };
-
-  const SortableHeader = ({ label }: { label: string }) => (
-    <div className="flex items-center gap-1 cursor-pointer select-none">
-      <span>{label}</span>
-      <LuChevronsUpDown className="w-4 h-4 text-gray-500" />
-    </div>
-  );
-
   return (
     <div className="w-full bg-zinc-900 rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
@@ -98,9 +52,6 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
             <tr className="border-b border-zinc-800">
               <th className="p-4 text-sm font-medium text-[#B3B3B3] text-left">
                 <SortableHeader label="Transaction ID" />
-              </th>
-              <th className="p-4 text-sm font-medium text-[#B3B3B3] text-left">
-                <SortableHeader label="Event" />
               </th>
               <th className="p-4 text-sm font-medium text-[#B3B3B3] text-left">
                 <SortableHeader label="Ticket Type" />
@@ -113,6 +64,9 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
               </th>
               <th className="p-4 text-sm font-medium text-[#B3B3B3] text-left">
                 <SortableHeader label="Buyer Email" />
+              </th>
+              <th className="p-4 text-sm font-medium text-[#B3B3B3] text-left">
+                <SortableHeader label="Checked In" />
               </th>
               <th className="p-4 text-sm font-medium text-[#B3B3B3] text-left">
                 <SortableHeader label="Status" />
@@ -131,23 +85,20 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 <td className="p-4 text-sm text-[#F4F4F5] font-semibold">
                   {transaction?.txnId}
                 </td>
-                <td className="p-4 text-sm text-[#F4F4F5]">
-                  <div className="flex flex-col">
-                    <span className="font-medium">{transaction?.event?.eventTitle}</span>
-                    <span className="text-xs text-[#9F9FA9]">{transaction?.event?.venue}</span>
-                  </div>
-                </td>
                 <td className="p-4 text-sm text-[#9F9FA9]">
                   {transaction?.ticket?.ticketName}
                 </td>
                 <td className="p-4 text-sm text-[#9F9FA9]">
-                  {getTransactionQuantity(transaction)}
+                  {transaction?.quantity}
                 </td>
                 <td className="p-4 text-sm text-[#9F9FA9]">
-                  {formatCurrency(transaction?.ticket?.price, transaction?.ticket?.currency)}
+                  {formatCurrency(transaction?.revenue, transaction?.ticket?.currency)}
                 </td>
                 <td className="p-4 text-sm text-[#9F9FA9]">
                   {transaction?.buyerEmail}
+                </td>
+                <td className="p-4 text-sm text-[#9F9FA9]">
+                  {transaction?.checkedInCount} / {transaction?.quantity}
                 </td>
                 <td className="p-4">
                   <span className={`px-3 py-1 text-sm rounded-full inline-block font-medium ${getStatusColor(transaction.status)}`}>

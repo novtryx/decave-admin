@@ -1,28 +1,15 @@
 import { create } from "zustand";
-import { getAllTransactions } from "@/app/actions/transaction";
-import { Transaction, TransactionPagination } from "@/types/transactionsType";
-import { processTransactionsFromAPI } from "@/utils/transaction-helper";
-
-interface TransactionStats {
-  totalRevenue: number;
-  completedCount: number;
-  pendingCount: number;
-  failedCount: number;
-}
-
-interface TransactionStore {
-  // State
-  transactions: Transaction[];
-  pagination: TransactionPagination;
-  stats: TransactionStats;
-  loading: boolean;
-  error: string | null;
-  
-  // Actions
-  fetchTransactions: (page: number, limit?: number) => Promise<void>;
-  clearError: () => void;
-  resetStore: () => void;
-}
+import {
+  getEventsTransactionSummary,
+  getEventTransactionHistory,
+} from "@/app/actions/transaction";
+import {
+  EventTransactionSummary,
+  EventTransactionDetailEvent,
+  EventTransactionTotals,
+  Transaction,
+  TransactionPagination,
+} from "@/types/transactionsType";
 
 const initialPagination: TransactionPagination = {
   total: 0,
@@ -33,78 +20,136 @@ const initialPagination: TransactionPagination = {
   hasPrev: false,
 };
 
-const initialStats: TransactionStats = {
+const initialTotals: EventTransactionTotals = {
   totalRevenue: 0,
-  completedCount: 0,
-  pendingCount: 0,
-  failedCount: 0,
+  totalPending: 0,
+  totalFailed: 0,
+  totalCompleted: 0,
+  totalCheckedIn: 0,
 };
 
-export const useTransactionStore = create<TransactionStore>((set) => ({
-  // Initial state
-  transactions: [],
-  pagination: initialPagination,
-  stats: initialStats,
-  loading: false,
-  error: null,
+interface TransactionStore {
+  // --- Landing view: events with transaction summaries ---
+  eventSummaries: EventTransactionSummary[];
+  summaryPagination: TransactionPagination;
+  summaryLoading: boolean;
+  summaryError: string | null;
+  fetchEventSummaries: (page?: number, limit?: number) => Promise<void>;
 
-  // Fetch transactions with pagination
-  fetchTransactions: async (page: number, limit: number = 10) => {
-    set({ loading: true, error: null });
+  // --- Drill-down view: transactions for a single event ---
+  selectedEvent: EventTransactionDetailEvent | null;
+  transactions: Transaction[];
+  totals: EventTransactionTotals;
+  transactionsPagination: TransactionPagination;
+  detailLoading: boolean;
+  detailError: string | null;
+  fetchEventTransactions: (
+    eventId: string,
+    page?: number,
+    limit?: number
+  ) => Promise<void>;
+  clearSelectedEvent: () => void;
+
+  clearErrors: () => void;
+}
+
+export const useTransactionStore = create<TransactionStore>((set) => ({
+  // Landing view state
+  eventSummaries: [],
+  summaryPagination: initialPagination,
+  summaryLoading: false,
+  summaryError: null,
+
+  fetchEventSummaries: async (page: number = 1, limit: number = 10) => {
+    set({ summaryLoading: true, summaryError: null });
 
     try {
-      const response = await getAllTransactions(page, limit);
+      const response = await getEventsTransactionSummary(page, limit);
 
-      if ('error' in response) {
-        set({ 
-          error: response.error, 
-          loading: false,
+      if ("error" in response) {
+        set({
+          summaryError: response.error,
+          summaryLoading: false,
+          eventSummaries: [],
+        });
+        return;
+      }
+
+      set({
+        eventSummaries: response.data,
+        summaryPagination: response.pagination,
+        summaryLoading: false,
+        summaryError: null,
+      });
+    } catch (err) {
+      set({
+        summaryError:
+          err instanceof Error
+            ? err.message
+            : "An error occurred while fetching events",
+        summaryLoading: false,
+        eventSummaries: [],
+      });
+      console.error("Error fetching event transaction summaries:", err);
+    }
+  },
+
+  // Drill-down view state
+  selectedEvent: null,
+  transactions: [],
+  totals: initialTotals,
+  transactionsPagination: initialPagination,
+  detailLoading: false,
+  detailError: null,
+
+  fetchEventTransactions: async (
+    eventId: string,
+    page: number = 1,
+    limit: number = 10
+  ) => {
+    set({ detailLoading: true, detailError: null });
+
+    try {
+      const response = await getEventTransactionHistory(eventId, page, limit);
+
+      if ("error" in response) {
+        set({
+          detailError: response.error,
+          detailLoading: false,
           transactions: [],
         });
         return;
       }
 
-      // Process transactions
-      const processedTransactions = Array.isArray(response.data)
-        ? processTransactionsFromAPI(response.data)
-        : [];
-
-      // Extract stats from API response
-      const stats: TransactionStats = {
-        totalRevenue: response.stats?.totalRevenue || 0,
-        completedCount: response.stats?.totalCompleted || 0,
-        pendingCount: response.stats?.totalPending || 0,
-        failedCount: response.stats?.totalFailed || 0,
-      };
-
       set({
-        transactions: processedTransactions,
-        pagination: response.pagination || initialPagination,
-        stats,
-        loading: false,
-        error: null,
+        selectedEvent: response.event,
+        transactions: response.data,
+        totals: response.stats,
+        transactionsPagination: response.pagination,
+        detailLoading: false,
+        detailError: null,
       });
     } catch (err) {
       set({
-        error: err instanceof Error 
-          ? err.message 
-          : "An error occurred while fetching transactions",
-        loading: false,
+        detailError:
+          err instanceof Error
+            ? err.message
+            : "An error occurred while fetching transactions",
+        detailLoading: false,
         transactions: [],
       });
-      console.error("Error fetching transactions:", err);
+      console.error("Error fetching event transactions:", err);
     }
   },
 
-  // Clear error
-  clearError: () => set({ error: null }),
+  clearSelectedEvent: () =>
+    set({
+      selectedEvent: null,
+      transactions: [],
+      totals: initialTotals,
+      transactionsPagination: initialPagination,
+      detailError: null,
+    }),
 
-  // Reset store to initial state
-  resetStore: () => set({
-    transactions: [],
-    pagination: initialPagination,
-    stats: initialStats,
-    loading: false,
-    error: null,
-  }),
+  clearErrors: () => set({ summaryError: null, detailError: null }),
 }));

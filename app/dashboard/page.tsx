@@ -7,6 +7,14 @@ import UpcomingEvents from "./UpcomingEvents";
 import Alerts from "./Alerts";
 import RecentActivity from "./RecentActivity";
 import { dashboardStore } from "@/store/dashboard/dashboardStore";
+import { DashboardRange } from "@/types/dashboardType";
+
+const RANGE_OPTIONS: { value: DashboardRange; label: string }[] = [
+  { value: "month", label: "This Month" },
+  { value: "3months", label: "Last 3 Months" },
+  { value: "year", label: "This Year" },
+  { value: "all", label: "All Time" },
+];
 
 export default function Dashboard() {
   const {
@@ -16,9 +24,11 @@ export default function Dashboard() {
     avgTicketPrice,
     upcomingEvents,
     recentActivities,
+    range,
     isLoading,
     error,
     fetchDashboardData,
+    setRange,
   } = dashboardStore();
 
   useEffect(() => {
@@ -28,11 +38,32 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       {/* Heading */}
-      <div className="mb-10">
-        <h3 className="text-[#F9F7F4] text-2xl font-semibold mb-2">
-          Dashboard
-        </h3>
-        <p className="text-[#B3B3B3]">Platform overview and activity</p>
+      <div className="mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h3 className="text-[#F9F7F4] text-2xl font-semibold mb-2">
+            Dashboard
+          </h3>
+          <p className="text-[#B3B3B3]">Platform overview and activity</p>
+        </div>
+
+        {/* Range selector */}
+        <div className="flex flex-wrap items-center gap-2 bg-[#151515] border border-[#27272A] rounded-xl p-1 w-fit">
+          {RANGE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setRange(option.value)}
+              disabled={isLoading}
+              className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-colors disabled:cursor-not-allowed ${
+                range === option.value
+                  ? "bg-[#cca33a] text-[#111827] font-semibold"
+                  : "text-[#9F9FA9] hover:text-[#F4F4F5]"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Error State */}
@@ -56,6 +87,7 @@ export default function Dashboard() {
               revenue={revenue}
               activeEvents={activeEvents}
               avgTicketPrice={avgTicketPrice}
+              range={range}
             />
           )}
 

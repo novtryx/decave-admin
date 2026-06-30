@@ -4,11 +4,17 @@ interface TicketsSoldProps {
   data: Array<{ month: string; value: number }>;
 }
 
-const CustomTooltip = ({ active, payload }: any) => {
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg p-3">
-        <p className="text-sm text-[#B3B3B3] mb-1">September, 2025</p>
+        <p className="text-sm text-[#B3B3B3] mb-1">{label}</p>
         <p className="text-lg font-bold text-[#3B82F6]">{payload[0].value.toLocaleString()}</p>
       </div>
     );

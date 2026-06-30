@@ -62,41 +62,12 @@ export default function RecentActivity({ activities }: RecentActivityProps) {
     }
   };
 
-  // Filter and prioritize diverse activity types
-  const getDiverseActivities = (activities: RecentActivity[], limit: number = 5) => {
-    // Separate activities by type
-    const eventActivities = activities.filter(a => 
-      a.title.toLowerCase().includes('published') || 
-      a.title.toLowerCase().includes('updated')
-    );
-    const loginActivities = activities.filter(a => 
-      a.title.toLowerCase().includes('login')
-    );
-    const otherActivities = activities.filter(a => 
-      !a.title.toLowerCase().includes('login') &&
-      !a.title.toLowerCase().includes('published') &&
-      !a.title.toLowerCase().includes('updated')
-    );
-
-    // Combine: prioritize event activities, then others, then logins
-    const combined = [
-      ...eventActivities.slice(0, 3),
-      ...otherActivities.slice(0, 2),
-      ...loginActivities.slice(0, 2)
-    ];
-
-    // If we don't have enough diverse activities, fill with whatever we have
-    if (combined.length < limit) {
-      const remaining = activities
-        .filter(a => !combined.includes(a))
-        .slice(0, limit - combined.length);
-      combined.push(...remaining);
-    }
-
-    return combined.slice(0, limit);
-  };
-
-  const recentActivities = getDiverseActivities(activities, 5);
+  // Backend already returns activities sorted newest-first
+  // (createdAt: -1). Just take the top N — no need to re-bucket by
+  // category, which was previously overriding recency (e.g. pushing
+  // the single newest activity to the bottom if it happened to be a
+  // login, since logins were always sorted last regardless of time).
+  const recentActivities = activities.slice(0, 5);
 
   if (recentActivities.length === 0) {
     return (

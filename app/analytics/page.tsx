@@ -10,36 +10,31 @@ import EventsPerformance from "./EventsPerformance";
 import TopEventsByRevenue from "./TopEventsByRevenue";
 import OperationalHealth from "./OperationalHealth";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { DashboardRange } from "@/types/dashboardType";
 
 const formatCurrency = (value: number) => `₦${value.toLocaleString()}`;
 
-const formatChange = (value: number) =>
-  `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
+const formatChange = (value: number | null) =>
+  value === null ? "" : `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
 
-const getTrend = (value: number): "up" | "down" | "stable" => {
+const getTrend = (value: number | null): "up" | "down" | "stable" | null => {
+  if (value === null) return null;
   if (value > 0) return "up";
   if (value < 0) return "down";
   return "stable";
 };
 
-const MONTH_LABELS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+const RANGE_OPTIONS: { value: DashboardRange; label: string }[] = [
+  { value: "month", label: "This Month" },
+  { value: "3months", label: "Last 3 Months" },
+  { value: "year", label: "This Year" },
+  { value: "all", label: "All Time" },
 ];
-
-// Backend keys look like "2026-1" (year-month, month is 1-indexed).
-// Render those as a short month name instead of the raw key.
-const formatMonthKey = (key: string): string => {
-  const [, month] = key.split("-").map(Number);
-  return MONTH_LABELS[month - 1] ?? key;
-};
-
-type TimePeriod = "Monthly" | "Yearly";
 
 interface StatWithTrend {
   value: string;
   change: string;
-  trend: "up" | "down" | "stable";
+  trend: "up" | "down" | "stable" | null;
 }
 
 interface UIAnalyticsData {
@@ -69,20 +64,20 @@ interface UIAnalyticsData {
 }
 
 const Analytics: React.FC = () => {
-  const [period, setPeriod] = useState<TimePeriod>("Monthly");
+  const [range, setRange] = useState<DashboardRange>("all");
   const [rawData, setRawData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch once — switching Monthly/Yearly is a pure client-side
-  // re-slice of the same payload (the backend already returns both
-  // breakdowns in one response), so there's no need to hit the
-  // network again every time the toggle is clicked.
+  // The range filter (same one used on the dashboard: month / 3months
+  // / year / all, defaulting to all) is server-side — switching it
+  // requires a fresh fetch, unlike the old Monthly/Yearly toggle which
+  // just re-sliced an already-fetched payload.
   useEffect(() => {
     async function fetchAnalytics() {
       setLoading(true);
       setError(null);
-      const res = await getAnalytics();
+      const res = await getAnalytics(range);
 
       if ("error" in res) {
         setError(res.error);
@@ -95,25 +90,19 @@ const Analytics: React.FC = () => {
     }
 
     fetchAnalytics();
-  }, []);
+  }, [range]);
 
   const data: UIAnalyticsData | null = useMemo(() => {
     if (!rawData) return null;
 
-    const isMonthly = period === "Monthly";
-
-    const revenueTrend = Object.entries(
-      isMonthly ? rawData.monthRevenue : rawData.yearRevenue
-    ).map(([key, value]) => ({
-      month: isMonthly ? formatMonthKey(key) : key,
-      value,
+    const revenueTrend = rawData.trend.map((point) => ({
+      month: point.label,
+      value: point.revenue,
     }));
 
-    const ticketsTrend = Object.entries(
-      isMonthly ? rawData.monthTickets : rawData.yearTickets
-    ).map(([key, value]) => ({
-      month: isMonthly ? formatMonthKey(key) : key,
-      value,
+    const ticketsTrend = rawData.trend.map((point) => ({
+      month: point.label,
+      value: point.tickets,
     }));
 
     const eventPerformanceMap = new Map<string, number>();
@@ -132,27 +121,21 @@ const Analytics: React.FC = () => {
       value: e.revenue,
     }));
 
-    const revenueMetric = isMonthly ? rawData.revenueThisMonth : rawData.revenueThisYear;
-    const ticketsMetric = isMonthly ? rawData.ticketsThisMonth : rawData.ticketsThisYear;
-    const conversionMetric = isMonthly
-      ? rawData.conversionThisMonth
-      : rawData.conversionThisYear;
-
     const stats: UIAnalyticsData["stats"] = {
       revenue: {
-        value: formatCurrency(revenueMetric.value),
-        change: formatChange(revenueMetric.changePercent),
-        trend: getTrend(revenueMetric.changePercent),
+        value: formatCurrency(rawData.revenue.value),
+        change: formatChange(rawData.revenue.changePercent),
+        trend: getTrend(rawData.revenue.changePercent),
       },
       ticketsSold: {
-        value: ticketsMetric.value.toLocaleString(),
-        change: formatChange(ticketsMetric.changePercent),
-        trend: getTrend(ticketsMetric.changePercent),
+        value: rawData.tickets.value.toLocaleString(),
+        change: formatChange(rawData.tickets.changePercent),
+        trend: getTrend(rawData.tickets.changePercent),
       },
       conversionRate: {
-        value: `${conversionMetric.value.toFixed(2)}%`,
-        change: formatChange(conversionMetric.changePercent),
-        trend: getTrend(conversionMetric.changePercent),
+        value: `${rawData.conversion.value.toFixed(2)}%`,
+        change: formatChange(rawData.conversion.changePercent),
+        trend: getTrend(rawData.conversion.changePercent),
       },
       eventsPublished: {
         value: rawData.totalPublishedEvents.toString(),
@@ -189,12 +172,12 @@ const Analytics: React.FC = () => {
         organicRevenue: rawData.influencerStats?.organicRevenue ?? 0,
       },
     };
-  }, [rawData, period]);
+  }, [rawData]);
 
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header with Toggle */}
+        {/* Header with range filter — same system as the dashboard */}
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-0 justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold mb-2">Analytics</h1>
@@ -202,27 +185,22 @@ const Analytics: React.FC = () => {
               Monitor performance across all events
             </p>
           </div>
-          <div className="flex bg-[#2a2a2a] rounded-lg p-1">
-            <button
-              onClick={() => setPeriod("Monthly")}
-              className={`px-6 py-2 rounded-md transition-colors ${
-                period === "Monthly"
-                  ? "bg-blue-600 text-white"
-                  : "text-[#B3B3B3] hover:text-white"
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setPeriod("Yearly")}
-              className={`px-6 py-2 rounded-md transition-colors ${
-                period === "Yearly"
-                  ? "bg-blue-600 text-white"
-                  : "text-[#B3B3B3] hover:text-white"
-              }`}
-            >
-              Yearly
-            </button>
+          <div className="flex flex-wrap items-center gap-2 bg-[#151515] border border-[#27272A] rounded-xl p-1 w-fit">
+            {RANGE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setRange(option.value)}
+                disabled={loading}
+                className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-colors disabled:cursor-not-allowed ${
+                  range === option.value
+                    ? "bg-[#cca33a] text-[#111827] font-semibold"
+                    : "text-[#9F9FA9] hover:text-[#F4F4F5]"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
 

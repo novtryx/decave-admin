@@ -1,4 +1,3 @@
-
 export interface Event {
     stage:number;
     published:boolean;
@@ -39,6 +38,9 @@ export interface Event {
         initialQuantity:number;
         availableQuantity: number;
         benefits:string[];
+        // Optional sale window — absent/null means sales are always open
+        saleStartDate?: string | null;
+        saleEndDate?: string | null;
         _id:string
 
   }[];
@@ -75,9 +77,16 @@ export interface Event {
   updatedAt?: Date;
 }
 
+export interface EventsPagination {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
 
 export interface TotalTicketStats {
   totalInitialTickets: number;
   totalSoldTickets: number;
 }
-

@@ -5,6 +5,7 @@ import { useSingleEventStore } from "@/store/events/SingleEvent";
 import { useLoadingStore } from "@/store/LoadingState";
 import { useSearchParams } from "next/navigation";
 import { EditEventAction } from "@/app/actions/event";
+import { toDateInputValue } from "@/constants/functions";
 import Spinner from "@/components/Spinner";
 import { useState, useEffect } from "react";
 
@@ -19,6 +20,7 @@ interface ValidationErrors {
       ticketName?: string;
       price?: string;
       quantity?: string;
+      saleDate?: string;
       benefits?: {
         [key: number]: string;
       };
@@ -60,7 +62,8 @@ export default function Tickets({ step, setStep }: StepProps) {
         ticketName: ticket.ticketName || "",
         price: ticket.price?.toString() || "",
         quantity: ticket.availableQuantity?.toString() || ticket.initialQuantity?.toString() || "",
-        salesDate: "", // You can add this field if available in your backend
+        saleStartDate: toDateInputValue(ticket.saleStartDate),
+        saleEndDate: toDateInputValue(ticket.saleEndDate),
         benefits: ticket.benefits?.length > 0
           ? ticket.benefits.map((benefit, benefitIndex) => ({
               id: Date.now() + index * 1000 + benefitIndex,
@@ -88,6 +91,7 @@ export default function Tickets({ step, setStep }: StepProps) {
         ticketName?: string;
         price?: string;
         quantity?: string;
+        saleDate?: string;
         benefits?: { [key: number]: string };
       } = {};
 
@@ -114,6 +118,16 @@ export default function Tickets({ step, setStep }: StepProps) {
         ticketErrors.quantity = "Quantity must be a valid number";
       } else if (!Number.isInteger(Number(ticket.quantity))) {
         ticketErrors.quantity = "Quantity must be a whole number";
+      }
+
+      // Sale date range validation (both optional, but if both are
+      // set, end must be after start)
+      if (
+        ticket.saleStartDate &&
+        ticket.saleEndDate &&
+        new Date(ticket.saleEndDate) <= new Date(ticket.saleStartDate)
+      ) {
+        ticketErrors.saleDate = "Sale end date must be after sale start date";
       }
 
       // Benefits validation
@@ -179,6 +193,8 @@ export default function Tickets({ step, setStep }: StepProps) {
         currency: "NGN",
         initialQuantity: Number(ticket.quantity),
         availableQuantity: Number(ticket.quantity),
+        saleStartDate: ticket.saleStartDate || null,
+        saleEndDate: ticket.saleEndDate || null,
         benefits: ticket.benefits
           .map((benefit) => benefit.text.trim())
           .filter((text) => text !== ""),
@@ -407,6 +423,65 @@ export default function Tickets({ step, setStep }: StepProps) {
                         </p>
                       )}
                     </div>
+                  </div>
+
+                  {/* Sale Start Date, Sale End Date (optional) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="block text-sm mb-2">
+                        Sale Start Date{" "}
+                        <span className="text-gray-500 text-xs">(optional)</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={ticket.saleStartDate}
+                        onChange={(e) => {
+                          updateTicket(ticket.id, "saleStartDate", e.target.value);
+                          setErrors((prev) => {
+                            const newTickets = { ...prev.tickets };
+                            if (newTickets[ticketIndex]) {
+                              delete newTickets[ticketIndex].saleDate;
+                              if (Object.keys(newTickets[ticketIndex]).length === 0) {
+                                delete newTickets[ticketIndex];
+                              }
+                            }
+                            return { ...prev, tickets: newTickets };
+                          });
+                        }}
+                        className="w-full bg-transparent border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 border-[#2a2a2a]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm mb-2">
+                        Sale End Date{" "}
+                        <span className="text-gray-500 text-xs">(optional)</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={ticket.saleEndDate}
+                        onChange={(e) => {
+                          updateTicket(ticket.id, "saleEndDate", e.target.value);
+                          setErrors((prev) => {
+                            const newTickets = { ...prev.tickets };
+                            if (newTickets[ticketIndex]) {
+                              delete newTickets[ticketIndex].saleDate;
+                              if (Object.keys(newTickets[ticketIndex]).length === 0) {
+                                delete newTickets[ticketIndex];
+                              }
+                            }
+                            return { ...prev, tickets: newTickets };
+                          });
+                        }}
+                        className={`w-full bg-transparent border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 ${
+                          ticketErrors.saleDate ? "border-red-500" : "border-[#2a2a2a]"
+                        }`}
+                      />
+                    </div>
+                    {ticketErrors.saleDate && (
+                      <p className="text-red-500 text-xs sm:col-span-2">
+                        {ticketErrors.saleDate}
+                      </p>
+                    )}
                   </div>
 
                   {/* Benefits Section */}

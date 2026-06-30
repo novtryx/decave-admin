@@ -1,19 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
 import FlashCard from "@/components/dashboard/FlashCard";
 import { FaCheck, FaRegClock } from "react-icons/fa6";
 import { IoCloseOutline } from "react-icons/io5";
 import { TbCurrencyNaira } from "react-icons/tb";
-import { useTransactionStore } from "@/store/transactions/transactionStore";
+import { MdOutlineHowToReg } from "react-icons/md";
+import { EventTransactionTotals } from "@/types/transactionsType";
 
-export default function TransactionStats() {
-  const { stats, loading, fetchTransactions } = useTransactionStore();
+interface TransactionStatsProps {
+  totals: EventTransactionTotals;
+  loading: boolean;
+}
 
-  useEffect(() => {
-    fetchTransactions(1, 10);
-  }, [fetchTransactions]);
-
+export default function TransactionStats({ totals, loading }: TransactionStatsProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
       style: "currency",
@@ -27,34 +26,41 @@ export default function TransactionStats() {
       id: 1,
       icon: <TbCurrencyNaira size={22} />,
       title: "Total Revenue",
-      value: loading ? "..." : formatCurrency(stats.totalRevenue),
+      value: loading ? "..." : formatCurrency(totals.totalRevenue),
       type: "Default",
     },
     {
       id: 2,
       icon: <FaCheck size={22} />,
       title: "Completed",
-      value: loading ? "..." : stats.completedCount.toString(),
+      value: loading ? "..." : totals.totalCompleted.toString(),
       type: "Default",
     },
     {
       id: 3,
       icon: <FaRegClock size={22} />,
       title: "Pending",
-      value: loading ? "..." : stats.pendingCount.toString(),
+      value: loading ? "..." : totals.totalPending.toString(),
       type: "Pending",
     },
     {
       id: 4,
       icon: <IoCloseOutline size={28} />,
       title: "Failed",
-      value: loading ? "..." : stats.failedCount.toString(),
+      value: loading ? "..." : totals.totalFailed.toString(),
       type: "Failed",
+    },
+    {
+      id: 5,
+      icon: <MdOutlineHowToReg size={22} />,
+      title: "Total Check-in",
+      value: loading ? "..." : totals.totalCheckedIn.toString(),
+      type: "Default",
     },
   ];
 
   return (
-    <section className="my-10 grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <section className="my-10 grid grid-cols-2 lg:grid-cols-5 gap-4">
       {statsData.map((item) => (
         <FlashCard key={item.id}>
           <div className="flex flex-col gap-2">

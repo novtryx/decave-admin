@@ -352,6 +352,8 @@ export interface Event {
     initialQuantity: number;
     availableQuantity: number;
     benefits: string[];
+    saleStartDate?: string | null;
+    saleEndDate?: string | null;
   }[];
 
   artistLineUp: {

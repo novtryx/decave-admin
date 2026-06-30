@@ -1,38 +1,56 @@
 "use server";
 
 import { protectedFetch } from "@/lib/protectedFetch";
-import { Transaction } from "@/types/transactionsType";
+import {
+  EventTransactionSummary,
+  EventTransactionDetailEvent,
+  EventTransactionTotals,
+  Transaction,
+  TransactionPagination,
+} from "@/types/transactionsType";
 
-interface TransactionsResponse {
+interface EventsTransactionSummaryResponse {
   message: string;
   success: boolean;
-  data: Transaction[];
-  stats?: {
-    totalRevenue: number;
-    totalPending: number;
-    totalFailed: number;
-    totalCompleted: number;
-  };
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    pages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
+  data: EventTransactionSummary[];
+  pagination: TransactionPagination;
 }
 
-// ✅ Remove try-catch and add proper return type
-export async function getAllTransactions(
+interface EventTransactionHistoryResponse {
+  message: string;
+  success: boolean;
+  event: EventTransactionDetailEvent;
+  data: Transaction[];
+  stats: EventTransactionTotals;
+  pagination: TransactionPagination;
+}
+
+// Landing view — every event with its transaction summary
+export async function getEventsTransactionSummary(
   page: number = 1,
   limit: number = 10
-): Promise<TransactionsResponse | { error: string }> {
-  const res = await protectedFetch<TransactionsResponse>(
-    `/transaction?page=${page}&limit=${limit}`,
-    {
-      method: "GET",
-    }
+): Promise<EventsTransactionSummaryResponse | { error: string }> {
+  const res = await protectedFetch<EventsTransactionSummaryResponse>(
+    `/transaction/events?page=${page}&limit=${limit}`,
+    { method: "GET" }
+  );
+
+  if (!res.success) {
+    return { error: res.error };
+  }
+
+  return res.data;
+}
+
+// Drill-down view — transactions for a single event
+export async function getEventTransactionHistory(
+  eventId: string,
+  page: number = 1,
+  limit: number = 10
+): Promise<EventTransactionHistoryResponse | { error: string }> {
+  const res = await protectedFetch<EventTransactionHistoryResponse>(
+    `/transaction/events/${eventId}?page=${page}&limit=${limit}`,
+    { method: "GET" }
   );
 
   if (!res.success) {

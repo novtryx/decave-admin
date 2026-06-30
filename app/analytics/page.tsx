@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getAnalytics } from "@/app/actions/analytics";
+import { useEffect, useMemo, useState } from "react";
+import { getAnalytics, AnalyticsData } from "@/app/actions/analytics";
 import AnalyticsStats from "./AnalyticsStats";
+import MoreStats from "./MoreStats";
 import RevenueTrend from "./RevenueTrend";
 import TicketsSold from "./TicketsSold";
 import EventsPerformance from "./EventsPerformance";
+import TopEventsByRevenue from "./TopEventsByRevenue";
+import OperationalHealth from "./OperationalHealth";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
 const formatCurrency = (value: number) => `₦${value.toLocaleString()}`;
@@ -13,220 +16,180 @@ const formatCurrency = (value: number) => `₦${value.toLocaleString()}`;
 const formatChange = (value: number) =>
   `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
 
+const getTrend = (value: number): "up" | "down" | "stable" => {
+  if (value > 0) return "up";
+  if (value < 0) return "down";
+  return "stable";
+};
+
+const MONTH_LABELS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+// Backend keys look like "2026-1" (year-month, month is 1-indexed).
+// Render those as a short month name instead of the raw key.
+const formatMonthKey = (key: string): string => {
+  const [, month] = key.split("-").map(Number);
+  return MONTH_LABELS[month - 1] ?? key;
+};
+
 type TimePeriod = "Monthly" | "Yearly";
+
+interface StatWithTrend {
+  value: string;
+  change: string;
+  trend: "up" | "down" | "stable";
+}
 
 interface UIAnalyticsData {
   stats: {
-    revenue: { value: string; change: string };
-    ticketsSold: { value: string; change: string };
-    conversionRate: { value: string; change: string };
-    eventsPublished: { value: string; change: string };
+    revenue: StatWithTrend;
+    ticketsSold: StatWithTrend;
+    conversionRate: StatWithTrend;
+    eventsPublished: StatWithTrend;
   };
   revenueTrend: Array<{ month: string; value: number }>;
   ticketsSold: Array<{ month: string; value: number }>;
   eventPerformance: Array<{ name: string; value: number }>;
+  topEventsByRevenue: Array<{ name: string; value: number }>;
+  checkInRate: number;
+  checkInEventsConsidered: number;
+  avgOrderValue: number;
+  paymentCompletionRate: number;
+  influencerRevenueSharePercent: number;
+  paymentHealth: { totalCompleted: number; totalPending: number; totalFailed: number };
+  ticketSaleWindow: {
+    onSale: number;
+    notYetOpen: number;
+    closed: number;
+    noWindowSet: number;
+  };
+  influencer: { influencerRevenue: number; organicRevenue: number };
 }
 
 const Analytics: React.FC = () => {
   const [period, setPeriod] = useState<TimePeriod>("Monthly");
-  const [data, setData] = useState<UIAnalyticsData | null>(null);
+  const [rawData, setRawData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // useEffect(() => {
-  //   async function fetchAnalytics() {
-  //     setLoading(true);
-  //     const res = await getAnalytics();
-
-  //     if (!res?.success) {
-  //       setLoading(false);
-  //       return;
-  //     }
-
-  //     const analytics = res.data;
-  //     const isMonthly = period === "Monthly";
-
-  //     /* Revenue & Tickets Trend */
-  //     const revenueTrend = Object.entries(
-  //       isMonthly ? analytics.monthRevenue : analytics.yearRevenue,
-  //     ).map(([key, value]) => ({
-  //       month: key,
-  //       value,
-  //     }));
-
-  //     const ticketsTrend = Object.entries(
-  //       isMonthly ? analytics.monthTickets : analytics.yearTickets,
-  //     ).map(([key, value]) => ({
-  //       month: key,
-  //       value,
-  //     }));
-
-  //     /* Event Performance */
-  //     const eventPerformanceMap = new Map<string, number>();
-
-  //     analytics.ticketSalesDetails.forEach((item) => {
-  //       eventPerformanceMap.set(
-  //         item.eventTitle,
-  //         (eventPerformanceMap.get(item.eventTitle) || 0) + item.ticketsSold,
-  //       );
-  //     });
-
-  //     const eventPerformance = Array.from(eventPerformanceMap.entries()).map(
-  //       ([name, value]) => ({ name, value }),
-  //     );
-
-  //     /* Stats Cards */
-  //     const stats: UIAnalyticsData["stats"] = {
-  //       revenue: {
-  //         value: formatCurrency(
-  //           isMonthly
-  //             ? analytics.revenueThisMonth.value
-  //             : analytics.revenueThisYear.value,
-  //         ),
-  //         change: formatChange(
-  //           isMonthly
-  //             ? analytics.revenueThisMonth.changePercent
-  //             : analytics.revenueThisYear.changePercent,
-  //         ),
-  //       },
-  //       ticketsSold: {
-  //         value: (isMonthly
-  //           ? analytics.ticketsThisMonth.value
-  //           : analytics.ticketsThisYear.value
-  //         ).toLocaleString(),
-  //         change: formatChange(
-  //           isMonthly
-  //             ? analytics.ticketsThisMonth.changePercent
-  //             : analytics.ticketsThisYear.changePercent,
-  //         ),
-  //       },
-  //       conversionRate: {
-  //         value: `${(isMonthly
-  //           ? analytics.conversionThisMonth.value
-  //           : analytics.conversionThisYear.value
-  //         ).toFixed(2)}%`,
-  //         change: formatChange(
-  //           isMonthly
-  //             ? analytics.conversionThisMonth.changePercent
-  //             : analytics.conversionThisYear.changePercent,
-  //         ),
-  //       },
-  //       eventsPublished: {
-  //         value: analytics.totalPublishedEvents.toString(),
-  //         change: "",
-  //       },
-  //     };
-
-  //     setData({
-  //       stats,
-  //       revenueTrend,
-  //       ticketsSold: ticketsTrend,
-  //       eventPerformance,
-  //     });
-
-  //     setLoading(false);
-  //   }
-
-  //   fetchAnalytics();
-  // }, [period]);
+  // Fetch once — switching Monthly/Yearly is a pure client-side
+  // re-slice of the same payload (the backend already returns both
+  // breakdowns in one response), so there's no need to hit the
+  // network again every time the toggle is clicked.
   useEffect(() => {
-  async function fetchAnalytics() {
-    setLoading(true);
-    const res = await getAnalytics();
+    async function fetchAnalytics() {
+      setLoading(true);
+      setError(null);
+      const res = await getAnalytics();
 
-    // ✅ Check for error using 'in' operator
-    if ('error' in res) {
-      console.error("Analytics error:", res.error);
+      if ("error" in res) {
+        setError(res.error);
+        setLoading(false);
+        return;
+      }
+
+      setRawData(res.data);
       setLoading(false);
-      return;
     }
 
-    // ✅ Now TypeScript knows res is AnalyticsResponse
-    const analytics = res.data;
+    fetchAnalytics();
+  }, []);
+
+  const data: UIAnalyticsData | null = useMemo(() => {
+    if (!rawData) return null;
+
     const isMonthly = period === "Monthly";
 
-    /* Revenue & Tickets Trend */
     const revenueTrend = Object.entries(
-      isMonthly ? analytics.monthRevenue : analytics.yearRevenue,
+      isMonthly ? rawData.monthRevenue : rawData.yearRevenue
     ).map(([key, value]) => ({
-      month: key,
+      month: isMonthly ? formatMonthKey(key) : key,
       value,
     }));
 
     const ticketsTrend = Object.entries(
-      isMonthly ? analytics.monthTickets : analytics.yearTickets,
+      isMonthly ? rawData.monthTickets : rawData.yearTickets
     ).map(([key, value]) => ({
-      month: key,
+      month: isMonthly ? formatMonthKey(key) : key,
       value,
     }));
 
-    /* Event Performance */
     const eventPerformanceMap = new Map<string, number>();
-
-    analytics.ticketSalesDetails.forEach((item) => {
+    rawData.ticketSalesDetails.forEach((item) => {
       eventPerformanceMap.set(
         item.eventTitle,
-        (eventPerformanceMap.get(item.eventTitle) || 0) + item.ticketsSold,
+        (eventPerformanceMap.get(item.eventTitle) || 0) + item.ticketsSold
       );
     });
-
     const eventPerformance = Array.from(eventPerformanceMap.entries()).map(
-      ([name, value]) => ({ name, value }),
+      ([name, value]) => ({ name, value })
     );
 
-    /* Stats Cards */
+    const topEventsByRevenue = (rawData.topEventsByRevenue || []).map((e) => ({
+      name: e.eventTitle,
+      value: e.revenue,
+    }));
+
+    const revenueMetric = isMonthly ? rawData.revenueThisMonth : rawData.revenueThisYear;
+    const ticketsMetric = isMonthly ? rawData.ticketsThisMonth : rawData.ticketsThisYear;
+    const conversionMetric = isMonthly
+      ? rawData.conversionThisMonth
+      : rawData.conversionThisYear;
+
     const stats: UIAnalyticsData["stats"] = {
       revenue: {
-        value: formatCurrency(
-          isMonthly
-            ? analytics.revenueThisMonth.value
-            : analytics.revenueThisYear.value,
-        ),
-        change: formatChange(
-          isMonthly
-            ? analytics.revenueThisMonth.changePercent
-            : analytics.revenueThisYear.changePercent,
-        ),
+        value: formatCurrency(revenueMetric.value),
+        change: formatChange(revenueMetric.changePercent),
+        trend: getTrend(revenueMetric.changePercent),
       },
       ticketsSold: {
-        value: (isMonthly
-          ? analytics.ticketsThisMonth.value
-          : analytics.ticketsThisYear.value
-        ).toLocaleString(),
-        change: formatChange(
-          isMonthly
-            ? analytics.ticketsThisMonth.changePercent
-            : analytics.ticketsThisYear.changePercent,
-        ),
+        value: ticketsMetric.value.toLocaleString(),
+        change: formatChange(ticketsMetric.changePercent),
+        trend: getTrend(ticketsMetric.changePercent),
       },
       conversionRate: {
-        value: `${(isMonthly
-          ? analytics.conversionThisMonth.value
-          : analytics.conversionThisYear.value
-        ).toFixed(2)}%`,
-        change: formatChange(
-          isMonthly
-            ? analytics.conversionThisMonth.changePercent
-            : analytics.conversionThisYear.changePercent,
-        ),
+        value: `${conversionMetric.value.toFixed(2)}%`,
+        change: formatChange(conversionMetric.changePercent),
+        trend: getTrend(conversionMetric.changePercent),
       },
       eventsPublished: {
-        value: analytics.totalPublishedEvents.toString(),
+        value: rawData.totalPublishedEvents.toString(),
         change: "",
+        trend: "stable",
       },
     };
 
-    setData({
+    return {
       stats,
       revenueTrend,
       ticketsSold: ticketsTrend,
       eventPerformance,
-    });
-
-    setLoading(false);
-  }
-
-  fetchAnalytics();
-}, [period]);
+      topEventsByRevenue,
+      checkInRate: rawData.checkInStats?.checkInRate ?? 0,
+      checkInEventsConsidered: rawData.checkInStats?.eventsConsidered ?? 0,
+      avgOrderValue: rawData.avgOrderValue ?? 0,
+      paymentCompletionRate: rawData.paymentHealth?.completionRate ?? 0,
+      influencerRevenueSharePercent:
+        rawData.influencerStats?.influencerRevenueSharePercent ?? 0,
+      paymentHealth: {
+        totalCompleted: rawData.paymentHealth?.totalCompleted ?? 0,
+        totalPending: rawData.paymentHealth?.totalPending ?? 0,
+        totalFailed: rawData.paymentHealth?.totalFailed ?? 0,
+      },
+      ticketSaleWindow: {
+        onSale: rawData.ticketSaleWindowStats?.onSale ?? 0,
+        notYetOpen: rawData.ticketSaleWindowStats?.notYetOpen ?? 0,
+        closed: rawData.ticketSaleWindowStats?.closed ?? 0,
+        noWindowSet: rawData.ticketSaleWindowStats?.noWindowSet ?? 0,
+      },
+      influencer: {
+        influencerRevenue: rawData.influencerStats?.influencerRevenue ?? 0,
+        organicRevenue: rawData.influencerStats?.organicRevenue ?? 0,
+      },
+    };
+  }, [rawData, period]);
 
   return (
     <DashboardLayout>
@@ -263,6 +226,12 @@ const Analytics: React.FC = () => {
           </div>
         </div>
 
+        {error && (
+          <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-4 text-center text-red-400">
+            {error}
+          </div>
+        )}
+
         {/* Loading State with Yellow Spinner */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -272,19 +241,32 @@ const Analytics: React.FC = () => {
           <>
             <AnalyticsStats data={data} />
 
+            <MoreStats
+              checkInRate={data.checkInRate}
+              checkInEventsConsidered={data.checkInEventsConsidered}
+              avgOrderValue={data.avgOrderValue}
+              paymentCompletionRate={data.paymentCompletionRate}
+              influencerRevenueSharePercent={data.influencerRevenueSharePercent}
+            />
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <RevenueTrend data={data.revenueTrend} />
               <TicketsSold data={data.ticketsSold} />
-              <div className="col-span-1 lg:col-span-2">
-                <EventsPerformance data={data.eventPerformance} />
-              </div>
+              <TopEventsByRevenue data={data.topEventsByRevenue} />
+              <EventsPerformance data={data.eventPerformance} />
             </div>
+
+            <OperationalHealth
+              paymentHealth={data.paymentHealth}
+              ticketSaleWindow={data.ticketSaleWindow}
+              influencer={data.influencer}
+            />
           </>
-        ) : (
+        ) : !error ? (
           <div className="flex items-center justify-center py-20">
             <p className="text-[#B3B3B3]">Failed to load analytics data</p>
           </div>
-        )}
+        ) : null}
       </div>
     </DashboardLayout>
   );

@@ -12,7 +12,10 @@ export interface Ticket {
   ticketName: string;
   price: string;
   quantity: string;
-  salesDate: string;
+  // Optional ticket sale window. Empty string = not set (sales are
+  // always open). Stored as "YYYY-MM-DD" to match <input type="date">.
+  saleStartDate: string;
+  saleEndDate: string;
   benefits: Benefit[];
   isExpanded: boolean;
   status: "Active" | "Inactive";
@@ -48,7 +51,8 @@ const defaultTicketState = {
       ticketName: "Regular",
       price: "5000",
       quantity: "100",
-      salesDate: "01/02/2026 - 12/02/2026",
+      saleStartDate: "",
+      saleEndDate: "",
       benefits: [{ id: 1, text: "" }],
       isExpanded: false,
       status: "Active" as const,
@@ -69,7 +73,8 @@ export const useTicketStore = create<TicketStore>((set) => ({
           ticketName: "",
           price: "",
           quantity: "",
-          salesDate: "",
+          saleStartDate: "",
+          saleEndDate: "",
           benefits: [{ id: Date.now(), text: "" }],
           isExpanded: true,
           status: "Inactive",

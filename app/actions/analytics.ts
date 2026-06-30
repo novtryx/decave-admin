@@ -2,6 +2,7 @@
 "use server";
 
 import { protectedFetch } from "@/lib/protectedFetch";
+import { DashboardRange } from "@/types/dashboardType";
 
 export interface TicketSalesDetail {
   ticketsSold: number;
@@ -11,11 +12,6 @@ export interface TicketSalesDetail {
   ticketTitle: string;
   ticketPrice: number;
   currency: string;
-}
-
-export interface MetricWithChange {
-  value: number;
-  changePercent: number;
 }
 
 export interface TopEventByRevenue {
@@ -54,7 +50,19 @@ export interface TicketSaleWindowStats {
   noWindowSet: number;
 }
 
+export interface MetricWithChange {
+  value: number;
+  changePercent: number | null;
+}
+
+export interface TrendPoint {
+  label: string;
+  revenue: number;
+  tickets: number;
+}
+
 export interface AnalyticsData {
+  range: DashboardRange;
   totalEvents: number;
   totalTickets: number;
   totalRevenue: number;
@@ -68,16 +76,10 @@ export interface AnalyticsData {
   paymentHealth: PaymentHealthStats;
   influencerStats: InfluencerStats;
   ticketSaleWindowStats: TicketSaleWindowStats;
-  monthRevenue: Record<string, number>;
-  monthTickets: Record<string, number>;
-  revenueThisMonth: MetricWithChange;
-  ticketsThisMonth: MetricWithChange;
-  yearRevenue: Record<string, number>;
-  yearTickets: Record<string, number>;
-  revenueThisYear: MetricWithChange;
-  ticketsThisYear: MetricWithChange;
-  conversionThisMonth: MetricWithChange;
-  conversionThisYear: MetricWithChange;
+  revenue: MetricWithChange;
+  tickets: MetricWithChange;
+  conversion: MetricWithChange;
+  trend: TrendPoint[];
 }
 
 export interface AnalyticsResponse {
@@ -85,8 +87,10 @@ export interface AnalyticsResponse {
   data: AnalyticsData;
 }
 
-export async function getAnalytics(): Promise<AnalyticsResponse | { error: string }> {
-  const res = await protectedFetch<AnalyticsResponse>("/analytics", {
+export async function getAnalytics(
+  range: DashboardRange = "all"
+): Promise<AnalyticsResponse | { error: string }> {
+  const res = await protectedFetch<AnalyticsResponse>(`/analytics?range=${range}`, {
     method: "GET",
   });
 

@@ -6,7 +6,7 @@ import { BiLineChart } from 'react-icons/bi';
 interface StatWithTrend {
   value: string;
   change: string;
-  trend: "up" | "down" | "stable";
+  trend: "up" | "down" | "stable" | null;
 }
 
 interface AnalyticsStatsProps {

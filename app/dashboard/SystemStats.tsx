@@ -29,11 +29,12 @@ export default function SystemStats({
   avgTicketPrice,
   range,
 }: SystemStatsProps) {
-  const formatCurrency = (value: number, currency?: string) => {
+  const formatCurrency = (value: number | undefined, currency?: string) => {
+    const safeValue = value ?? 0;
     if (currency === "NGN") {
-      return `₦${value.toLocaleString()}`;
+      return `₦${safeValue.toLocaleString()}`;
     }
-    return value.toLocaleString();
+    return safeValue.toLocaleString();
   };
 
   const comparisonLabel = range === "all" ? null : COMPARISON_LABEL[range];
@@ -42,7 +43,7 @@ export default function SystemStats({
     {
       id: 1,
       title: "Total Ticket Sales",
-      value: ticketSale.currentPeriod.toLocaleString(),
+      value: (ticketSale.currentPeriod ?? 0).toLocaleString(),
       icon: <TbTicket />,
       metric: ticketSale,
     },
@@ -56,7 +57,7 @@ export default function SystemStats({
     {
       id: 3,
       title: "Active Events",
-      value: activeEvents.currentPeriod.toString(),
+      value: (activeEvents.currentPeriod ?? 0).toString(),
       icon: <MdOutlineCalendarMonth />,
       metric: activeEvents,
     },
@@ -73,8 +74,12 @@ export default function SystemStats({
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 p-4">
       {statsData.map((item) => {
         const { trend, percentageChange } = item.metric;
-        // No comparison period available at all (range === "all")
-        const hasComparison = trend !== null && percentageChange !== null;
+        // No comparison period available at all (range === "all"),
+        // OR the backend response is missing/malformed these fields
+        // entirely (e.g. a stale cached response or version drift) —
+        // treat both the same: show "all-time total" rather than
+        // crashing on a null/undefined value.
+        const hasComparison = trend != null && percentageChange != null;
         const isStable = trend === "stable";
 
         return (

@@ -11,6 +11,8 @@ import TopEventsByRevenue from "./TopEventsByRevenue";
 import OperationalHealth from "./OperationalHealth";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { DashboardRange } from "@/types/dashboardType";
+import { FiDownload } from "react-icons/fi";
+import { downloadCSVGeneric } from "@/constants/exportGeneric";
 
 const formatCurrency = (value: number) => `₦${value.toLocaleString()}`;
 
@@ -174,6 +176,27 @@ const Analytics: React.FC = () => {
     };
   }, [rawData]);
 
+  const handleExportTicketSales = () => {
+    if (!rawData) return;
+    const headers = ["Event", "Ticket Type", "Tickets Sold", "Revenue", "Ticket Price", "Currency"];
+    const rows = rawData.ticketSalesDetails.map((item) => [
+      item.eventTitle,
+      item.ticketTitle,
+      item.ticketsSold,
+      item.revenue,
+      item.ticketPrice,
+      item.currency,
+    ]);
+    downloadCSVGeneric(headers, rows, `ticket-sales_${range}`);
+  };
+
+  const handleExportTopEvents = () => {
+    if (!rawData) return;
+    const headers = ["Event", "Revenue", "Tickets Sold"];
+    const rows = (rawData.topEventsByRevenue || []).map((e) => [e.eventTitle, e.revenue, e.ticketsSold]);
+    downloadCSVGeneric(headers, rows, `top-events-by-revenue_${range}`);
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-8">
@@ -185,22 +208,40 @@ const Analytics: React.FC = () => {
               Monitor performance across all events
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 bg-[#151515] border border-[#27272A] rounded-xl p-1 w-fit">
-            {RANGE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setRange(option.value)}
-                disabled={loading}
-                className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-colors disabled:cursor-not-allowed ${
-                  range === option.value
-                    ? "bg-[#cca33a] text-[#111827] font-semibold"
-                    : "text-[#9F9FA9] hover:text-[#F4F4F5]"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 bg-[#151515] border border-[#27272A] rounded-xl p-1 w-fit">
+              {RANGE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setRange(option.value)}
+                  disabled={loading}
+                  className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-colors disabled:cursor-not-allowed ${
+                    range === option.value
+                      ? "bg-[#cca33a] text-[#111827] font-semibold"
+                      : "text-[#9F9FA9] hover:text-[#F4F4F5]"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleExportTicketSales}
+              disabled={!rawData}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#151515] border border-[#27272A] text-sm text-[#F4F4F5] hover:bg-[#1f1f1f] disabled:opacity-50"
+              title="Export ticket sales breakdown"
+            >
+              <FiDownload size={14} /> Ticket Sales
+            </button>
+            <button
+              onClick={handleExportTopEvents}
+              disabled={!rawData}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#151515] border border-[#27272A] text-sm text-[#F4F4F5] hover:bg-[#1f1f1f] disabled:opacity-50"
+              title="Export top events by revenue"
+            >
+              <FiDownload size={14} /> Top Events
+            </button>
           </div>
         </div>
 

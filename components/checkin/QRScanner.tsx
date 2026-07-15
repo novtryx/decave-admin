@@ -71,7 +71,25 @@ export default function QRScanner({ onScan, disabled }: QRScannerProps) {
   const startCamera = async () => {
     setCameraError(null);
     setStarting(true);
+
+    // getUserMedia only exists on secure contexts (HTTPS or
+    // localhost) — if it's missing entirely, no permission prompt
+    // will ever appear, so tell the person that directly instead of
+    // showing a generic "check your permissions" message.
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCameraError(
+        "This browser can't access the camera here — camera access needs a secure (https://) connection."
+      );
+      setStarting(false);
+      return;
+    }
+
     try {
+      // Calling getUserMedia is itself what triggers the browser's
+      // native permission prompt the first time. If permission was
+      // already denied previously, browsers won't re-prompt — that's
+      // caught as NotAllowedError below with instructions to fix it
+      // manually, since no JS can force a re-prompt at that point.
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false,
@@ -83,10 +101,25 @@ export default function QRScanner({ onScan, disabled }: QRScannerProps) {
       }
       setCameraActive(true);
       rafRef.current = requestAnimationFrame(tick);
-    } catch (err) {
-      setCameraError(
-        "Couldn't access the camera. Make sure you've allowed camera permission, and that you're on HTTPS."
-      );
+    } catch (err: any) {
+      switch (err?.name) {
+        case "NotAllowedError":
+        case "PermissionDeniedError":
+          setCameraError(
+            "Camera permission was denied. Open your browser's site settings for this page and allow Camera access, then tap \"Start Camera Scanner\" again."
+          );
+          break;
+        case "NotFoundError":
+        case "DevicesNotFoundError":
+          setCameraError("No camera was found on this device.");
+          break;
+        case "NotReadableError":
+        case "TrackStartError":
+          setCameraError("The camera is already in use by another app. Close it and try again.");
+          break;
+        default:
+          setCameraError("Couldn't access the camera. Please try again.");
+      }
     } finally {
       setStarting(false);
     }

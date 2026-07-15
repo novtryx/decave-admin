@@ -6,6 +6,7 @@ import { FiArrowLeft, FiSearch } from "react-icons/fi";
 import TransactionStats from "./TransactionStats";
 import { SortDropdown } from "@/components/events/SortDropdown";
 import { TransactionTable } from "@/components/sales-and-transactions/TransactionTable";
+import PaymentHealthPanel from "@/components/sales-and-transactions/PaymentHealthPanel";
 import { useState, useEffect, useMemo, Suspense } from "react";
 import Image from "next/image";
 import {
@@ -19,6 +20,12 @@ import {
 } from "@/constants/functions";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransactionStore } from "@/store/transactions/transactionStore";
+import {
+  manuallyVerifyTransaction,
+  refundTransaction,
+  cancelTransaction,
+} from "@/app/actions/transaction";
+import type { Transaction } from "@/types/transactionsType";
 
 const statusOptions = [
   { label: "All", value: "all" },
@@ -79,6 +86,62 @@ function SalesAndTransactionsContent() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState<"all" | "new" | "old">("all");
   const [periodFilter, setPeriodFilter] = useState<"all" | "this-month" | "last-month">("all");
+
+  // Payment-control action state (manual verify / refund / cancel)
+  const [actionInFlightId, setActionInFlightId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const refreshTransactions = () => {
+    if (eventId) fetchEventTransactions(eventId, currentPage);
+  };
+
+  const handleManualVerify = async (transaction: Transaction, note: string) => {
+    setActionInFlightId(transaction._id);
+    setActionError(null);
+    const res = await manuallyVerifyTransaction(transaction._id, { note });
+    setActionInFlightId(null);
+    if ("error" in res) {
+      setActionError(res.error);
+      return;
+    }
+    if (!res.success) {
+      setActionError(res.message);
+      return;
+    }
+    refreshTransactions();
+  };
+
+  const handleRefund = async (transaction: Transaction, reason: string) => {
+    setActionInFlightId(transaction._id);
+    setActionError(null);
+    const res = await refundTransaction(transaction._id, { reason, restock: true });
+    setActionInFlightId(null);
+    if ("error" in res) {
+      setActionError(res.error);
+      return;
+    }
+    if (!res.success) {
+      setActionError(res.message);
+      return;
+    }
+    refreshTransactions();
+  };
+
+  const handleCancel = async (transaction: Transaction, reason: string) => {
+    setActionInFlightId(transaction._id);
+    setActionError(null);
+    const res = await cancelTransaction(transaction._id, { reason });
+    setActionInFlightId(null);
+    if ("error" in res) {
+      setActionError(res.error);
+      return;
+    }
+    if (!res.success) {
+      setActionError(res.message);
+      return;
+    }
+    refreshTransactions();
+  };
 
   // Fetch whichever view is active whenever the URL changes
   useEffect(() => {
@@ -149,6 +212,7 @@ function SalesAndTransactionsContent() {
 
   return (
     <DashboardLayout>
+      {!eventId && <PaymentHealthPanel />}
       {/* Heading */}
       <section className="mb-10 flex flex-col lg:flex-row gap-4 lg:gap-0 items-start lg:items-center justify-between">
         <div>
@@ -403,7 +467,20 @@ function SalesAndTransactionsContent() {
                 )}
               </div>
             ) : (
-              <TransactionTable transactions={filteredTransactions} />
+              <>
+                {actionError && (
+                  <div className="mb-3 px-4 py-2 rounded bg-[#2A0F0F] text-[#EF4444] text-sm">
+                    {actionError}
+                  </div>
+                )}
+                <TransactionTable
+                  transactions={filteredTransactions}
+                  onManualVerify={handleManualVerify}
+                  onRefund={handleRefund}
+                  onCancel={handleCancel}
+                  actionInFlightId={actionInFlightId}
+                />
+              </>
             )}
           </section>
         </>

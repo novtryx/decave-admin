@@ -23,6 +23,7 @@ export interface CreateTicketData {
   benefits?: string[];
   saleStartDate?: string | null;
   saleEndDate?: string | null;
+  tierCategory?: string;
 }
 
 // Fields accepted when updating an EXISTING ticket. `price` is
@@ -36,6 +37,7 @@ export interface UpdateTicketData {
   benefits?: string[];
   saleStartDate?: string | null;
   saleEndDate?: string | null;
+  tierCategory?: string;
 }
 
 export interface TicketType {

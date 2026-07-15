@@ -9,7 +9,7 @@ import { Event } from "@/types/eventsType";
 import React from "react";
 import { AiOutlineEye } from "react-icons/ai";
 import { FiEdit2 } from "react-icons/fi";
-import { LuChevronsUpDown } from "react-icons/lu";
+import { LuChevronsUpDown, LuChartBar } from "react-icons/lu";
 import { RiDeleteBin6Line } from "react-icons/ri";
 
 type EventStatus = "live" | "draft" | "past" | "upcoming";
@@ -23,6 +23,7 @@ interface EventTableProps {
   onView?: (event: Event) => void;
   onEdit?: (event: Event) => void;
   onDelete?: (event: Event) => void;
+  onAnalytics?: (event: Event) => void;
 }
 
 const SortableHeader = ({ label }: { label: string }) => (
@@ -38,6 +39,7 @@ export const EventTable: React.FC<EventTableProps> = ({
   onView,
   onEdit,
   onDelete,
+  onAnalytics,
 }) => {
   const getStatusBadge = (status: EventStatus) => {
     const styles = {
@@ -144,6 +146,15 @@ export const EventTable: React.FC<EventTableProps> = ({
                 </td>
                 <td className="p-4">
                   <div className="flex items-center gap-3">
+                    {onAnalytics && (
+                      <button
+                        onClick={() => onAnalytics(event)}
+                        className="text-gray-400 hover:text-[#cca33a] transition-colors"
+                        aria-label="View event analytics"
+                      >
+                        <LuChartBar size={18} />
+                      </button>
+                    )}
                     {onView && (
                       <button
                         onClick={() => onView(event)}

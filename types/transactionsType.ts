@@ -33,11 +33,19 @@ export interface TransactionBuyer {
 
 // A single transaction row, scoped to one event (no nested `event`
 // object — the event is already known from the page context).
+export type TransactionStatus =
+  | "completed"
+  | "pending"
+  | "failed"
+  | "refunded"
+  | "cancelled"
+  | "manually_verified";
+
 export interface Transaction {
   _id: string;
   txnId: string;
   paystackId: string;
-  status: "completed" | "pending" | "failed";
+  status: TransactionStatus;
   createdAt: string;
   quantity: number;
   revenue: number;
@@ -52,6 +60,52 @@ export interface Transaction {
     saleStartDate?: string | null;
     saleEndDate?: string | null;
   };
+}
+
+// ── Pending payment aging (GET /transaction/pending-aging) ──
+export interface PendingAgingItem {
+  txnId: string;
+  eventId: string;
+  eventTitle: string;
+  buyerEmail: string;
+  buyerName: string;
+  quantity: number;
+  createdAt: string;
+  ageMinutes: number;
+}
+
+export interface PendingAgingBucket {
+  count: number;
+  transactions: PendingAgingItem[];
+}
+
+export interface PendingAgingResponse {
+  success: boolean;
+  totalPending: number;
+  buckets: {
+    under5Min: PendingAgingBucket;
+    fiveMinTo1Hour: PendingAgingBucket;
+    oneHourTo6Hours: PendingAgingBucket;
+    sixHoursTo24Hours: PendingAgingBucket;
+    expired: PendingAgingBucket;
+  };
+}
+
+// ── Abandoned checkout recovery (GET /transaction/abandoned) ──
+export interface AbandonedCheckout {
+  txnId: string;
+  eventId: string;
+  eventTitle: string;
+  buyers: { fullName: string; email: string; phoneNumber: string }[];
+  quantity: number;
+  createdAt: string;
+  ageMinutes: number;
+}
+
+export interface AbandonedCheckoutsResponse {
+  success: boolean;
+  data: AbandonedCheckout[];
+  pagination: TransactionPagination;
 }
 
 export interface EventTransactionTotals {

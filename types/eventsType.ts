@@ -41,6 +41,9 @@ export interface Event {
         // Optional sale window — absent/null means sales are always open
         saleStartDate?: string | null;
         saleEndDate?: string | null;
+        // Ticket tier category (early_access, vip, gate, etc). Falls
+        // back to "standard" wherever it's missing on older tickets.
+        tierCategory?: string;
         _id:string
 
   }[];

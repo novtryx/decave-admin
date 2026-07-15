@@ -100,3 +100,92 @@ export async function getAnalytics(
 
   return res.data;
 }
+
+// ==================== EVENT-LEVEL ANALYTICS ====================
+
+export type SaleWindowStatus = "on_sale" | "not_yet_open" | "closed" | "no_window_set";
+
+export interface TierBreakdownItem {
+  ticketId: string;
+  ticketName: string;
+  tierCategory: string;
+  price: number;
+  currency: string;
+  initialQuantity: number;
+  availableQuantity: number;
+  ticketsSold: number;
+  revenue: number;
+  soldPercent: number;
+  checkedIn: number;
+  pending: number;
+  refunded: number;
+  cancelled: number;
+  saleWindowStatus: SaleWindowStatus;
+  salesVelocityPerDay: number;
+  unsoldInventoryFlag: boolean;
+  recommendNextPhase: string | null;
+}
+
+export interface DailySalesTrendPoint {
+  date: string;
+  ticketsSold: number;
+  revenue: number;
+}
+
+export interface EventAnalyticsData {
+  eventId: string;
+  eventTitle: string;
+  eventBanner: string;
+  published: boolean;
+  startDate: string;
+  endDate: string;
+  totalTicketsCreated: number;
+  totalTicketsSold: number;
+  totalTicketsRemaining: number;
+  totalRevenue: number;
+  tierBreakdown: TierBreakdownItem[];
+  dailySalesTrend: DailySalesTrendPoint[];
+  peakSaleDay: DailySalesTrendPoint | null;
+  noShowRate: number;
+  checkInRate: number;
+  totalCheckedIn: number;
+}
+
+interface EventAnalyticsResponse {
+  success: boolean;
+  data: EventAnalyticsData;
+}
+
+interface CompareEventAnalyticsResponse {
+  success: boolean;
+  data: EventAnalyticsData[];
+}
+
+export async function getEventAnalytics(
+  eventId: string
+): Promise<EventAnalyticsResponse | { error: string }> {
+  const res = await protectedFetch<EventAnalyticsResponse>(`/analytics/events/${eventId}`, {
+    method: "GET",
+  });
+
+  if (!res.success) {
+    return { error: res.error };
+  }
+
+  return res.data;
+}
+
+export async function compareEventAnalytics(
+  eventIds: string[]
+): Promise<CompareEventAnalyticsResponse | { error: string }> {
+  const res = await protectedFetch<CompareEventAnalyticsResponse>(
+    `/analytics/events/compare?ids=${eventIds.join(",")}`,
+    { method: "GET" }
+  );
+
+  if (!res.success) {
+    return { error: res.error };
+  }
+
+  return res.data;
+}

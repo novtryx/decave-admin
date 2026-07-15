@@ -1,4 +1,4 @@
-import { IoAddOutline, IoTrashOutline, IoChevronDown, IoPencilOutline } from "react-icons/io5"
+import { IoAddOutline, IoTrashOutline, IoPencilOutline } from "react-icons/io5"
 import { IoArrowBack, IoArrowForward } from "react-icons/io5"
 import { useTicketStore } from "@/store/create-events/Ticket";
 import { useSingleEventStore } from "@/store/events/SingleEvent";
@@ -6,6 +6,7 @@ import { useLoadingStore } from "@/store/LoadingState";
 import { useSearchParams } from "next/navigation";
 import { EditEventAction } from "@/app/actions/event";
 import { toDateInputValue } from "@/constants/functions";
+import { TICKET_TIER_CATEGORIES, getTierLabel } from "@/constants/ticketTiers";
 import Spinner from "@/components/Spinner";
 import { useState, useEffect } from "react";
 
@@ -64,6 +65,7 @@ export default function Tickets({ step, setStep }: StepProps) {
         quantity: ticket.availableQuantity?.toString() || ticket.initialQuantity?.toString() || "",
         saleStartDate: toDateInputValue(ticket.saleStartDate),
         saleEndDate: toDateInputValue(ticket.saleEndDate),
+        tierCategory: ticket.tierCategory || "standard",
         benefits: ticket.benefits?.length > 0
           ? ticket.benefits.map((benefit, benefitIndex) => ({
               id: Date.now() + index * 1000 + benefitIndex,
@@ -195,6 +197,7 @@ export default function Tickets({ step, setStep }: StepProps) {
         availableQuantity: Number(ticket.quantity),
         saleStartDate: ticket.saleStartDate || null,
         saleEndDate: ticket.saleEndDate || null,
+        tierCategory: ticket.tierCategory || "standard",
         benefits: ticket.benefits
           .map((benefit) => benefit.text.trim())
           .filter((text) => text !== ""),
@@ -286,44 +289,36 @@ export default function Tickets({ step, setStep }: StepProps) {
                     <label className="block text-sm mb-2">
                       Ticket Name <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative">
-                      <select
-                        value={ticket.ticketName}
-                        onChange={(e) => {
-                          updateTicket(ticket.id, "ticketName", e.target.value);
-                          setErrors((prev) => {
-                            const newTickets = { ...prev.tickets };
-                            if (newTickets[ticketIndex]) {
-                              delete newTickets[ticketIndex].ticketName;
-                              if (Object.keys(newTickets[ticketIndex]).length === 0) {
-                                delete newTickets[ticketIndex];
-                              }
+                    <input
+                      type="text"
+                      list={`ticket-name-suggestions-${ticket.id}`}
+                      value={ticket.ticketName}
+                      onChange={(e) => {
+                        updateTicket(ticket.id, "ticketName", e.target.value);
+                        setErrors((prev) => {
+                          const newTickets = { ...prev.tickets };
+                          if (newTickets[ticketIndex]) {
+                            delete newTickets[ticketIndex].ticketName;
+                            if (Object.keys(newTickets[ticketIndex]).length === 0) {
+                              delete newTickets[ticketIndex];
                             }
-                            return { ...prev, tickets: newTickets };
-                          });
-                        }}
-                        className={`w-full bg-transparent border rounded-lg px-4 py-3 text-sm appearance-none cursor-pointer focus:outline-none focus:border-gray-600 ${
-                          ticketErrors.ticketName ? "border-red-500" : "border-[#2a2a2a]"
-                        }`}
-                      >
-                        <option value="" className="bg-gray-900">
-                          e.g. Early Bird, Regular, VIP, Platinum
-                        </option>
-                        <option value="Early Bird" className="bg-gray-900">
-                          Early Bird
-                        </option>
-                        <option value="Regular" className="bg-gray-900">
-                          Regular
-                        </option>
-                        <option value="VIP" className="bg-gray-900">
-                          VIP
-                        </option>
-                        <option value="Platinum" className="bg-gray-900">
-                          Platinum
-                        </option>
-                      </select>
-                      <IoChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
+                          }
+                          return { ...prev, tickets: newTickets };
+                        });
+                      }}
+                      placeholder="e.g. Early Bird, Regular, VIP, Table for 4"
+                      className={`w-full bg-transparent border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600 placeholder:text-gray-600 ${
+                        ticketErrors.ticketName ? "border-red-500" : "border-[#2a2a2a]"
+                      }`}
+                    />
+                    {/* Suggestions only — this is a free-text label, not
+                        an enum. Use "Tier Category" below for the
+                        canonical categorization analytics relies on. */}
+                    <datalist id={`ticket-name-suggestions-${ticket.id}`}>
+                      {TICKET_TIER_CATEGORIES.map((category) => (
+                        <option key={category} value={getTierLabel(category)} />
+                      ))}
+                    </datalist>
                     {ticketErrors.ticketName && (
                       <p className="text-red-500 text-xs mt-1">
                         {ticketErrors.ticketName}
@@ -399,6 +394,29 @@ export default function Tickets({ step, setStep }: StepProps) {
                         </p>
                       )}
                     </div>
+                  </div>
+
+                  {/* Tier Category */}
+                  <div className="mt-4">
+                    <label className="block text-sm mb-2">
+                      Tier Category
+                    </label>
+                    <select
+                      value={ticket.tierCategory || "standard"}
+                      onChange={(e) =>
+                        updateTicket(ticket.id, "tierCategory", e.target.value)
+                      }
+                      className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600"
+                    >
+                      {TICKET_TIER_CATEGORIES.map((category) => (
+                        <option key={category} value={category} className="bg-[#111111]">
+                          {getTierLabel(category)}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Used for tier performance analytics — pick the closest match.
+                    </p>
                   </div>
 
                   {/* Sale Start Date, Sale End Date (optional) */}

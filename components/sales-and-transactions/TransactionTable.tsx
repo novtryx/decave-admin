@@ -4,6 +4,10 @@ import { Transaction } from '@/types/transactionsType';
 
 interface TransactionTableProps {
   transactions: Transaction[];
+  onManualVerify?: (transaction: Transaction, note: string) => void;
+  onRefund?: (transaction: Transaction, reason: string) => void;
+  onCancel?: (transaction: Transaction, reason: string) => void;
+  actionInFlightId?: string | null;
 }
 
 const SortableHeader = ({ label }: { label: string }) => (
@@ -13,18 +17,34 @@ const SortableHeader = ({ label }: { label: string }) => (
   </div>
 );
 
-export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions }) => {
+export const TransactionTable: React.FC<TransactionTableProps> = ({
+  transactions,
+  onManualVerify,
+  onRefund,
+  onCancel,
+  actionInFlightId = null,
+}) => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
+      case 'manually_verified':
         return 'bg-[#0F2A1A] text-[#22C55E]';
       case 'pending':
         return 'bg-[#2A1F0F] text-[#F59E0B]';
       case 'failed':
         return 'bg-[#2A0F0F] text-[#EF4444]';
+      case 'refunded':
+        return 'bg-[#1F0F2A] text-[#A855F7]';
+      case 'cancelled':
+        return 'bg-[#2A2A2A] text-[#9F9FA9]';
       default:
         return 'text-gray-500';
     }
+  };
+
+  const getStatusLabel = (status: string) => {
+    if (status === 'manually_verified') return 'Manually Verified';
+    return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   const formatCurrency = (amount: number, currency: string) => {
@@ -74,10 +94,19 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
               <th className="p-4 text-sm font-medium text-[#B3B3B3] text-left">
                 <SortableHeader label="Date" />
               </th>
+              <th className="p-4 text-sm font-medium text-[#B3B3B3] text-left">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
-            {transactions.map((transaction) => (
+            {transactions.map((transaction) => {
+              const isBusy = actionInFlightId === transaction._id;
+              const canVerify = ['pending', 'failed'].includes(transaction.status);
+              const canRefund = ['completed', 'manually_verified'].includes(transaction.status);
+              const canCancel = ['pending', 'failed'].includes(transaction.status);
+
+              return (
               <tr
                 key={transaction?._id}
                 className="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors"
@@ -102,14 +131,62 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 </td>
                 <td className="p-4">
                   <span className={`px-3 py-1 text-sm rounded-full inline-block font-medium ${getStatusColor(transaction.status)}`}>
-                    {transaction?.status?.charAt(0)?.toUpperCase() + transaction?.status?.slice(1)}
+                    {getStatusLabel(transaction?.status)}
                   </span>
                 </td>
                 <td className="p-4 text-sm text-[#9F9FA9]">
                   {formatDate(transaction?.createdAt)}
                 </td>
+                <td className="p-4">
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    {canVerify && onManualVerify && (
+                      <button
+                        disabled={isBusy}
+                        onClick={() => {
+                          const note = window.prompt('Optional note for this manual verification (e.g. bank transfer reference):') || '';
+                          onManualVerify(transaction, note);
+                        }}
+                        className="text-xs px-2 py-1 rounded bg-[#0F2A1A] text-[#22C55E] hover:bg-[#0F2A1A]/70 disabled:opacity-50"
+                      >
+                        Mark Paid
+                      </button>
+                    )}
+                    {canRefund && onRefund && (
+                      <button
+                        disabled={isBusy}
+                        onClick={() => {
+                          const reason = window.prompt('Reason for refund:') || '';
+                          if (window.confirm('Refund this transaction and restock the ticket?')) {
+                            onRefund(transaction, reason);
+                          }
+                        }}
+                        className="text-xs px-2 py-1 rounded bg-[#1F0F2A] text-[#A855F7] hover:bg-[#1F0F2A]/70 disabled:opacity-50"
+                      >
+                        Refund
+                      </button>
+                    )}
+                    {canCancel && onCancel && (
+                      <button
+                        disabled={isBusy}
+                        onClick={() => {
+                          const reason = window.prompt('Reason for cancelling:') || '';
+                          if (window.confirm('Cancel this transaction?')) {
+                            onCancel(transaction, reason);
+                          }
+                        }}
+                        className="text-xs px-2 py-1 rounded bg-[#2A0F0F] text-[#EF4444] hover:bg-[#2A0F0F]/70 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    {!canVerify && !canRefund && !canCancel && (
+                      <span className="text-xs text-[#6B6B6B]">—</span>
+                    )}
+                  </div>
+                </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

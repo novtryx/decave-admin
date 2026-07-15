@@ -16,6 +16,10 @@ export interface Ticket {
   // always open). Stored as "YYYY-MM-DD" to match <input type="date">.
   saleStartDate: string;
   saleEndDate: string;
+  // Tier category (early_access, vip, gate, etc). Defaults to
+  // "standard" — matches the backend default so old tickets and
+  // freshly-added ones both behave the same until explicitly changed.
+  tierCategory: string;
   benefits: Benefit[];
   isExpanded: boolean;
   status: "Active" | "Inactive";
@@ -53,6 +57,7 @@ const defaultTicketState = {
       quantity: "100",
       saleStartDate: "",
       saleEndDate: "",
+      tierCategory: "standard",
       benefits: [{ id: 1, text: "" }],
       isExpanded: false,
       status: "Active" as const,
@@ -75,6 +80,7 @@ export const useTicketStore = create<TicketStore>((set) => ({
           quantity: "",
           saleStartDate: "",
           saleEndDate: "",
+          tierCategory: "standard",
           benefits: [{ id: Date.now(), text: "" }],
           isExpanded: true,
           status: "Inactive",

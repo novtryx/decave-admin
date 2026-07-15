@@ -354,6 +354,7 @@ export interface Event {
     benefits: string[];
     saleStartDate?: string | null;
     saleEndDate?: string | null;
+    tierCategory?: string;
   }[];
 
   artistLineUp: {

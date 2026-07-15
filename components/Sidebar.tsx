@@ -12,6 +12,8 @@ import { LuChartColumn, LuCreditCard } from "react-icons/lu";
 import { FaEnvelope, FaHandshakeAngle } from "react-icons/fa6";
 import { HiOutlineSparkles } from "react-icons/hi2";
 import { HiOutlineUserGroup } from "react-icons/hi2";       // Influencers
+import { HiOutlineIdentification } from "react-icons/hi2";  // Customers (CRM)
+import { IoScanOutline } from "react-icons/io5";             // Check-in
 import { PiMoneyWavyLight } from "react-icons/pi";          // Influencer withdrawals
 import { MdOutlineStorefront } from "react-icons/md";       // Other Events
 import Link from "next/link";
@@ -70,6 +72,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           icon: <MdOutlineStorefront size={22} />,
           href: "/other-events",
         },
+        {
+          id: "check-in",
+          label: "Check-In",
+          icon: <IoScanOutline size={22} />,
+          href: "/check-in",
+        },
       ],
     },
     {
@@ -93,6 +101,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: "Finance",
       items: [
         {
+          id: "finance",
+          label: "Finance",
+          icon: <PiMoneyWavyLight size={22} />,
+          href: "/finance",
+        },
+        {
           id: "sales",
           label: "Sales & Transactions",
           icon: <LuCreditCard size={22} />,
@@ -103,6 +117,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       label: "Growth",
       items: [
+        {
+          id: "customers",
+          label: "Customers",
+          icon: <HiOutlineIdentification size={22} />,
+          href: "/customers",
+        },
         {
           id: "partners",
           label: "Partners & Sponsors",

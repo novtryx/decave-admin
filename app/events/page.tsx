@@ -222,6 +222,7 @@ function EventsContent() {
             revenueByEventId={revenueByEventId}
             onView={(event) => router.push(`/events/edit-event?id=${event._id}`)}
             onEdit={(event) => router.push(`/events/edit-event?id=${event._id}`)}
+            onAnalytics={(event) => router.push(`/events/event-analytics?id=${event._id}`)}
             onDelete={(event) => setEventToDelete(event)}
           />
         )}

@@ -357,6 +357,17 @@ export interface Event {
     tierCategory?: string;
   }[];
 
+  // Optional per-event cocktail/drink add-on menu
+  cocktails?: {
+    _id: string;
+    name: string;
+    description?: string;
+    price: number;
+    currency: string;
+    initialQuantity: number;
+    availableQuantity: number;
+  }[];
+
   artistLineUp: {
     artistImage: string;
     artistName: string;
@@ -418,6 +429,7 @@ type EventApi = {
 
   aboutEvent?: Event["aboutEvent"];
   tickets?: Event["tickets"];
+  cocktails?: Event["cocktails"];
   artistLineUp?: Event["artistLineUp"];
   emergencyContact?: Event["emergencyContact"];
   faq?: Event["faq"];
@@ -470,6 +482,7 @@ const mapEvent = (data: EventApi): Event => ({
   },
 
   tickets: data.tickets ?? [],
+  cocktails: data.cocktails ?? [],
   artistLineUp: data.artistLineUp ?? [],
   emergencyContact: data.emergencyContact ?? {
     security: "",
@@ -528,6 +541,7 @@ const mapSingleEventToEvent = (data: any): Event => ({
 
   aboutEvent: data.aboutEvent ?? { heading: '', description: '', content: [] },
   tickets: data.tickets ?? [],
+  cocktails: data.cocktails ?? [],
   artistLineUp: data.artistLineUp ?? [],
   emergencyContact: data.emergencyContact ?? { security: '', medical: '', lostButFound: '' },
 

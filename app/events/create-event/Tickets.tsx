@@ -1,6 +1,7 @@
 import { IoAddOutline, IoTrashOutline, IoPencilOutline } from "react-icons/io5"
 import { IoArrowBack, IoArrowForward } from "react-icons/io5"
 import { useTicketStore } from "@/store/create-events/Ticket";
+import { useCocktailStore } from "@/store/create-events/Cocktail";
 import { useSingleEventStore } from "@/store/events/SingleEvent";
 import { useLoadingStore } from "@/store/LoadingState";
 import { useSearchParams } from "next/navigation";
@@ -45,6 +46,15 @@ export default function Tickets({ step, setStep }: StepProps) {
     initializeTickets,
   } = useTicketStore()
 
+  const {
+    cocktails,
+    addCocktail,
+    deleteCocktail,
+    updateCocktail,
+    toggleExpand: toggleCocktailExpand,
+    initializeCocktails,
+  } = useCocktailStore()
+
   const { event } = useSingleEventStore();
   const { startLoading, stopLoading } = useLoadingStore();
 
@@ -81,6 +91,26 @@ export default function Tickets({ step, setStep }: StepProps) {
       setIsInitialized(true);
     }
   }, [event, initializeTickets, isInitialized, eventId]);
+
+  /** Initialize cocktail menu with event data if available */
+  const [isCocktailsInitialized, setIsCocktailsInitialized] = useState(false);
+  useEffect(() => {
+    if (event?.cocktails && event.cocktails.length > 0 && !isCocktailsInitialized && eventId) {
+      const initialCocktails = event.cocktails.map((cocktail, index) => ({
+        id: Date.now() + index,
+        _id: cocktail._id,
+        name: cocktail.name || "",
+        description: cocktail.description || "",
+        price: cocktail.price?.toString() || "",
+        quantity:
+          cocktail.availableQuantity?.toString() || cocktail.initialQuantity?.toString() || "",
+        isExpanded: false,
+      }));
+
+      initializeCocktails(initialCocktails);
+      setIsCocktailsInitialized(true);
+    }
+  }, [event, initializeCocktails, isCocktailsInitialized, eventId]);
 
   /** Validate all required fields */
   const validateForm = (): boolean => {
@@ -202,6 +232,16 @@ export default function Tickets({ step, setStep }: StepProps) {
           .map((benefit) => benefit.text.trim())
           .filter((text) => text !== ""),
       })),
+      cocktails: cocktails
+        .filter((c) => c.name.trim() && c.price)
+        .map((cocktail) => ({
+          name: cocktail.name.trim(),
+          description: cocktail.description.trim(),
+          price: Number(cocktail.price),
+          currency: "NGN",
+          initialQuantity: Number(cocktail.quantity) || 0,
+          availableQuantity: Number(cocktail.quantity) || 0,
+        })),
     };
 
     console.log("Saving tickets data:", data);
@@ -663,6 +703,127 @@ export default function Tickets({ step, setStep }: StepProps) {
             </div>
           );
         })}
+      </div>
+
+      {/* Cocktails / Drinks Add-On Menu (optional) */}
+      <div className="mt-10">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h3 className="text-lg font-semibold">Cocktails & Drinks (Optional)</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Buyers can add these at checkout, always at 20% off the price you set here —
+              that discount is applied automatically platform-wide.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={addCocktail}
+            className="flex items-center gap-2 px-4 py-2 border border-[#2a2a2a] rounded-lg text-sm hover:bg-[#1a1a1a] transition-colors shrink-0"
+          >
+            <IoAddOutline /> Add Cocktail
+          </button>
+        </div>
+
+        {cocktails.length === 0 ? (
+          <p className="text-sm text-gray-600 py-6 text-center border border-dashed border-[#2a2a2a] rounded-lg">
+            No cocktails added — this section is optional.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {cocktails.map((cocktail) => {
+              const discountedPrice = cocktail.price
+                ? (Number(cocktail.price) * 0.8).toFixed(0)
+                : null;
+
+              return (
+                <div key={cocktail.id} className="border border-[#2a2a2a] rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => toggleCocktailExpand(cocktail.id)}
+                      className="flex-1 flex items-center gap-2 text-left"
+                    >
+                      <span className="font-medium">
+                        {cocktail.name || "Untitled Cocktail"}
+                      </span>
+                      {discountedPrice && (
+                        <span className="text-xs text-gray-500">
+                          ₦{Number(cocktail.price).toLocaleString()} →{" "}
+                          <span className="text-[#22C55E]">₦{Number(discountedPrice).toLocaleString()}</span> after discount
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteCocktail(cocktail.id)}
+                      className="text-gray-500 hover:text-red-500 transition-colors"
+                      aria-label="Delete cocktail"
+                    >
+                      <IoTrashOutline className="text-lg" />
+                    </button>
+                  </div>
+
+                  {cocktail.isExpanded && (
+                    <div className="mt-4 space-y-4">
+                      <div>
+                        <label className="block text-sm mb-2">
+                          Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={cocktail.name}
+                          onChange={(e) => updateCocktail(cocktail.id, "name", e.target.value)}
+                          placeholder="e.g. Mojito, Margarita"
+                          className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm mb-2">Description</label>
+                        <input
+                          type="text"
+                          value={cocktail.description}
+                          onChange={(e) =>
+                            updateCocktail(cocktail.id, "description", e.target.value)
+                          }
+                          placeholder="Short description (optional)"
+                          className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm mb-2">
+                            Price (₦) <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={cocktail.price}
+                            onChange={(e) => updateCocktail(cocktail.id, "price", e.target.value)}
+                            placeholder="0"
+                            className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm mb-2">Quantity Available</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={cocktail.quantity}
+                            onChange={(e) =>
+                              updateCocktail(cocktail.id, "quantity", e.target.value)
+                            }
+                            placeholder="0"
+                            className="w-full bg-transparent border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-600"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Best Practices */}

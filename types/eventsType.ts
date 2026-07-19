@@ -48,6 +48,19 @@ export interface Event {
 
   }[];
 
+  // Optional per-event cocktail/drink add-on menu, offered at
+  // checkout alongside tickets. Always the undiscounted menu price —
+  // the 20% off is a fixed, platform-wide policy applied at checkout.
+  cocktails?: {
+        name: string;
+        description?: string;
+        price: number;
+        currency: string;
+        initialQuantity: number;
+        availableQuantity: number;
+        _id: string;
+  }[];
+
   //stage 4
   artistLineUp:{
     artistImage: string;

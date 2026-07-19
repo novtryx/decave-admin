@@ -14,6 +14,25 @@ interface EventDataType {
 // Fields accepted when creating a brand-new ticket. Note:
 // `availableQuantity` is intentionally absent — the backend always
 // sets it equal to `initialQuantity` for a new ticket.
+export interface CreateCocktailData {
+  eventId: string;
+  name: string;
+  description?: string;
+  price: number;
+  currency?: string;
+  initialQuantity: number;
+}
+
+// `price` is deliberately excluded — immutable after creation, same
+// rule as tickets; the backend ignores it with a warning if sent.
+export interface UpdateCocktailData {
+  name?: string;
+  description?: string;
+  currency?: string;
+  initialQuantity?: number;
+  availableQuantity?: number;
+}
+
 export interface CreateTicketData {
   eventId: string;
   ticketName: string;
@@ -183,6 +202,51 @@ export async function CreateEventTicketAction(
     success: boolean;
     data: Event;
   }>(`/events/create-ticket/${data.eventId}`, {
+    method: "POST",
+    body: data,
+  });
+
+  if (!res.success) {
+    return { error: res.error };
+  }
+
+  return res.data;
+}
+
+export async function UpdateEventCocktailAction(
+  eventId: string,
+  cocktailId: string,
+  data: UpdateCocktailData
+): Promise<
+  { message: string; success: boolean; data: Event; warnings?: string[] } | { error: string }
+> {
+  const res = await protectedFetch<{
+    message: string;
+    success: boolean;
+    data: Event;
+    warnings?: string[];
+  }>(`/events/${eventId}/cocktails/${cocktailId}`, {
+    method: "PATCH",
+    body: data,
+  });
+
+  if (!res.success) {
+    return { error: res.error };
+  }
+
+  return res.data;
+}
+
+export async function CreateEventCocktailAction(
+  data: CreateCocktailData
+): Promise<
+  { message: string; success: boolean; data: Event } | { error: string }
+> {
+  const res = await protectedFetch<{
+    message: string;
+    success: boolean;
+    data: Event;
+  }>(`/events/create-cocktail/${data.eventId}`, {
     method: "POST",
     body: data,
   });

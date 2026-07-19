@@ -2,7 +2,7 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useEffect, useState } from "react";
-import { FiSearch } from "react-icons/fi";
+import { FiSearch, FiDownload } from "react-icons/fi";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import { getCustomers } from "@/app/actions/crm";
 import { getAllEvents } from "@/app/actions/event";
@@ -10,6 +10,7 @@ import type { Customer, CustomerFilters } from "@/types/crmType";
 import { getTagLabel, AUTO_CUSTOMER_TAGS } from "@/types/crmType";
 import type { Event } from "@/types/eventsType";
 import CustomerDetailModal from "@/components/customers/CustomerDetailModal";
+import { downloadCSVGeneric } from "@/constants/exportGeneric";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(value || 0);
@@ -77,14 +78,53 @@ export default function CustomersPage() {
     fetchCustomers();
   };
 
+  const handleExport = () => {
+    const headers = [
+      "Full Name",
+      "Email",
+      "Phone",
+      "Total Spend",
+      "Tickets Purchased",
+      "Events Attended",
+      "Checked In",
+      "Referral Source",
+      "Tags",
+      "First Purchase",
+      "Last Purchase",
+    ];
+    const rows = customers.map((c) => [
+      c.fullName,
+      c.email,
+      c.phoneNumber,
+      c.totalSpend,
+      c.ticketsPurchased,
+      c.eventsAttendedCount,
+      c.checkedInCount,
+      c.referralSource,
+      c.tags.join("; "),
+      formatDate(c.firstPurchaseDate),
+      formatDate(c.lastPurchaseDate),
+    ]);
+    downloadCSVGeneric(headers, rows, "customers");
+  };
+
   return (
     <DashboardLayout>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Customers</h1>
-        <p className="text-sm text-[#9F9FA9] mt-1">
-          Your buyer database, built from every ticket ever sold — filter, tag, and retarget past
-          buyers for the next event.
-        </p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Customers</h1>
+          <p className="text-sm text-[#9F9FA9] mt-1">
+            Your buyer database, built from every ticket ever sold — filter, tag, and retarget past
+            buyers for the next event.
+          </p>
+        </div>
+        <button
+          onClick={handleExport}
+          disabled={customers.length === 0}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-white text-sm hover:bg-[#2a2a2a] disabled:opacity-50 shrink-0"
+        >
+          <FiDownload /> Export CSV
+        </button>
       </div>
 
       {/* Filters */}

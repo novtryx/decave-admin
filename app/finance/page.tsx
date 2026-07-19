@@ -3,12 +3,14 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useEffect, useState } from "react";
 import { IoAddOutline, IoTrashOutline } from "react-icons/io5";
+import { FiDownload } from "react-icons/fi";
 import { getFinanceOverview, getFinanceEntries, deleteFinanceEntry } from "@/app/actions/finance";
 import { getAllEvents } from "@/app/actions/event";
 import type { FinanceOverview, FinanceEntry } from "@/types/financeType";
 import { getCategoryLabel } from "@/types/financeType";
 import type { Event } from "@/types/eventsType";
 import AddFinanceEntryModal from "@/components/finance/AddFinanceEntryModal";
+import { downloadCSVGeneric } from "@/constants/exportGeneric";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(value || 0);
@@ -79,6 +81,33 @@ export default function FinancePage() {
     }
   };
 
+  const handleExportEntries = () => {
+    const headers = ["Date", "Event", "Type", "Category", "Description", "Amount", "Added By"];
+    const rows = entries.map((e) => [
+      formatDate(e.date),
+      e.event?.eventDetails?.eventTitle || "General",
+      e.type === "credit" ? "Credit" : "Debit",
+      getCategoryLabel(e.category),
+      e.description || "",
+      e.amount,
+      e.createdBy?.fullName || e.createdBy?.email || "",
+    ]);
+    downloadCSVGeneric(headers, rows, "finance-entries");
+  };
+
+  const handleExportEventProfit = () => {
+    if (!overview) return;
+    const headers = ["Event", "Ticket Revenue", "Other Credits", "Expenses", "Profit"];
+    const rows = overview.events.map((ev) => [
+      ev.eventTitle,
+      ev.netTicketRevenue,
+      ev.manualCredits,
+      ev.totalExpenses,
+      ev.profit,
+    ]);
+    downloadCSVGeneric(headers, rows, "profit-by-event");
+  };
+
   if (isLoading && !overview) {
     return (
       <DashboardLayout>
@@ -125,7 +154,15 @@ export default function FinancePage() {
       {/* Per-event profit table */}
       {overview && overview.events.length > 0 && (
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 mb-8">
-          <h3 className="text-lg font-semibold text-white mb-4">Profit by Event</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Profit by Event</h3>
+            <button
+              onClick={handleExportEventProfit}
+              className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg bg-[#111111] border border-[#2a2a2a] text-white hover:bg-[#2a2a2a]"
+            >
+              <FiDownload size={14} /> Export CSV
+            </button>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -166,6 +203,13 @@ export default function FinancePage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <h3 className="text-lg font-semibold text-white">Entries</h3>
           <div className="flex gap-2">
+            <button
+              onClick={handleExportEntries}
+              disabled={entries.length === 0}
+              className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-[#111111] border border-[#2a2a2a] text-white hover:bg-[#2a2a2a] disabled:opacity-50"
+            >
+              <FiDownload size={14} /> Export CSV
+            </button>
             <select
               value={eventFilter}
               onChange={(e) => setEventFilter(e.target.value)}

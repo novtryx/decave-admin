@@ -36,7 +36,7 @@ const initialArtist = (): Artist => ({
   isHeadliner: true,
   instagram: "",
   twitter: "",
-  website: "",
+  website: "", 
 });
 
 const defaultLineupState = {

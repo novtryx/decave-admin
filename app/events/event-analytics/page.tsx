@@ -16,12 +16,15 @@ import {
 import {
   getEventAnalytics,
   compareEventAnalytics,
+  getEventTrafficSources,
   EventAnalyticsData,
   TierBreakdownItem,
+  EventTrafficSourcesData,
 } from "@/app/actions/analytics";
 import { getAllEvents } from "@/app/actions/event";
 import { Event } from "@/types/eventsType";
 import { getTierLabel, SALE_WINDOW_LABELS } from "@/constants/ticketTiers";
+import TrafficSources from "./TrafficSources";
 
 const formatCurrency = (value: number, currency: string = "NGN") =>
   new Intl.NumberFormat("en-NG", { style: "currency", currency }).format(value || 0);
@@ -92,6 +95,13 @@ function EventAnalyticsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Traffic sources — fetched separately so a failure here (e.g. no
+  // visits logged yet for older events) never blocks the rest of the
+  // page from rendering.
+  const [trafficData, setTrafficData] = useState<EventTrafficSourcesData | null>(null);
+  const [trafficError, setTrafficError] = useState<string | null>(null);
+  const [trafficLoading, setTrafficLoading] = useState(true);
+
   // Comparison
   const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [compareId, setCompareId] = useState<string>("");
@@ -113,6 +123,20 @@ function EventAnalyticsContent() {
         setData(res.data);
       }
       setIsLoading(false);
+    })();
+
+    (async () => {
+      setTrafficLoading(true);
+      setTrafficError(null);
+      const res = await getEventTrafficSources(eventId);
+      if ("error" in res) {
+        setTrafficError(res.error);
+      } else if (!res.success) {
+        setTrafficError("Failed to load traffic sources");
+      } else {
+        setTrafficData(res.data);
+      }
+      setTrafficLoading(false);
     })();
 
     getAllEvents(1, 50).then((res) => {
@@ -204,6 +228,19 @@ function EventAnalyticsContent() {
           </table>
         </div>
       </div>
+
+      {/* Traffic sources */}
+      {trafficLoading ? (
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 mb-8 flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#cca33a]" />
+        </div>
+      ) : trafficError ? (
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 mb-8 text-sm text-[#9F9FA9]">
+          {trafficError}
+        </div>
+      ) : trafficData ? (
+        <TrafficSources totalVisits={trafficData.totalVisits} sources={trafficData.sources} />
+      ) : null}
 
       {/* Daily sales trend */}
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 mb-8">

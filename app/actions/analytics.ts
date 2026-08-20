@@ -189,3 +189,39 @@ export async function compareEventAnalytics(
 
   return res.data;
 }
+
+// ==================== TRAFFIC SOURCE BREAKDOWN ====================
+
+export interface TrafficSourceRow {
+  source: string;
+  visits: number;
+  purchases: number;
+  conversionRate: number;
+  sharePercent: number;
+}
+
+export interface EventTrafficSourcesData {
+  eventId: string;
+  totalVisits: number;
+  sources: TrafficSourceRow[];
+}
+
+interface EventTrafficSourcesResponse {
+  success: boolean;
+  data: EventTrafficSourcesData;
+}
+
+export async function getEventTrafficSources(
+  eventId: string
+): Promise<EventTrafficSourcesResponse | { error: string }> {
+  const res = await protectedFetch<EventTrafficSourcesResponse>(
+    `/analytics/events/${eventId}/sources`,
+    { method: "GET" }
+  );
+
+  if (!res.success) {
+    return { error: res.error };
+  }
+
+  return res.data;
+}

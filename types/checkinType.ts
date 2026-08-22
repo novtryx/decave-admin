@@ -61,3 +61,36 @@ export interface AttendanceExportResponse {
   success: boolean;
   data: { eventTitle: string; rows: AttendanceRow[] };
 }
+
+// ==================== COCKTAIL REDEMPTION ====================
+
+export interface CocktailOrderItem {
+  cocktailId: string;
+  name: string;
+  quantity: number;
+  redeemedQuantity: number;
+  remaining: number;
+}
+
+export interface CocktailOrderLookup {
+  txnId: string;
+  eventTitle: string;
+  buyerName: string;
+  items: CocktailOrderItem[];
+}
+
+export interface CocktailOrderLookupResponse {
+  success: boolean;
+  data: CocktailOrderLookup;
+}
+
+export interface CocktailRedeemResult {
+  txnId: string;
+  items: CocktailOrderItem[];
+}
+
+export interface CocktailRedeemResponse {
+  success: boolean;
+  message: string;
+  data: CocktailRedeemResult;
+}

@@ -145,7 +145,31 @@ export default function QRScanner({ onScan, disabled }: QRScannerProps) {
       </h3>
 
       <div className="mb-4">
-        {!cameraActive ? (
+        {/*
+          The <video> (and its wrapper) must ALWAYS be mounted, never
+          conditionally rendered on `cameraActive`. startCamera()
+          attaches the stream to videoRef.current before cameraActive
+          flips true — if the element only exists after that flip,
+          videoRef.current is still null when we try to attach the
+          stream, the attach silently no-ops, and the camera light
+          turns on with nothing ever drawn to screen. CSS visibility
+          hides it instead of unmounting it, so the ref is always valid.
+        */}
+        <div className={cameraActive ? "block" : "hidden"}>
+          <div className="relative rounded-lg overflow-hidden border border-[#2a2a2a] mb-2">
+            <video ref={videoRef} className="w-full" muted playsInline autoPlay />
+            {/* Scan-frame overlay, purely visual */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-2/3 aspect-square border-2 border-[#cca33a] rounded-lg" />
+            </div>
+          </div>
+          <canvas ref={canvasRef} className="hidden" />
+          <button onClick={stopCamera} className="w-full py-2 rounded-lg bg-[#2a2a2a] text-white text-sm">
+            Stop Camera
+          </button>
+        </div>
+
+        {!cameraActive && (
           <button
             onClick={startCamera}
             disabled={disabled || starting}
@@ -153,20 +177,6 @@ export default function QRScanner({ onScan, disabled }: QRScannerProps) {
           >
             {starting ? "Starting Camera…" : "Start Camera Scanner"}
           </button>
-        ) : (
-          <div>
-            <div className="relative rounded-lg overflow-hidden border border-[#2a2a2a] mb-2">
-              <video ref={videoRef} className="w-full" muted playsInline autoPlay />
-              {/* Scan-frame overlay, purely visual */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-2/3 aspect-square border-2 border-[#cca33a] rounded-lg" />
-              </div>
-            </div>
-            <canvas ref={canvasRef} className="hidden" />
-            <button onClick={stopCamera} className="w-full py-2 rounded-lg bg-[#2a2a2a] text-white text-sm">
-              Stop Camera
-            </button>
-          </div>
         )}
         {cameraError && <p className="text-red-500 text-xs mt-2">{cameraError}</p>}
       </div>

@@ -6,6 +6,8 @@ import {
   AttendeeSearchResponse,
   LiveDoorMetricsResponse,
   AttendanceExportResponse,
+  CocktailOrderLookupResponse,
+  CocktailRedeemResponse,
 } from "@/types/checkinType";
 
 export async function scanCheckIn(code: string): Promise<CheckInScanResponse | { error: string }> {
@@ -56,6 +58,31 @@ export async function getAttendanceExport(
 ): Promise<AttendanceExportResponse | { error: string }> {
   const res = await protectedFetch<AttendanceExportResponse>(`/checkin/events/${eventId}/export`, {
     method: "GET",
+  });
+  if (!res.success) return { error: res.error };
+  return res.data;
+}
+
+// ==================== COCKTAIL REDEMPTION ====================
+
+export async function lookupCocktailOrder(
+  code: string
+): Promise<CocktailOrderLookupResponse | { error: string }> {
+  const res = await protectedFetch<CocktailOrderLookupResponse>(
+    `/cocktails/lookup?code=${encodeURIComponent(code)}`,
+    { method: "GET" }
+  );
+  if (!res.success) return { error: res.error };
+  return res.data;
+}
+
+export async function redeemCocktails(
+  code: string,
+  redemptions: { cocktailId: string; quantity: number }[]
+): Promise<CocktailRedeemResponse | { error: string }> {
+  const res = await protectedFetch<CocktailRedeemResponse>(`/cocktails/redeem`, {
+    method: "POST",
+    body: { code, redemptions },
   });
   if (!res.success) return { error: res.error };
   return res.data;

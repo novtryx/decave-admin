@@ -16,6 +16,7 @@ import { HiOutlineIdentification } from "react-icons/hi2";  // Customers (CRM)
 import { IoScanOutline } from "react-icons/io5";             // Check-in
 import { PiMoneyWavyLight } from "react-icons/pi";          // Influencer withdrawals
 import { MdOutlineStorefront } from "react-icons/md";       // Other Events
+import { HiOutlineClipboardDocumentList } from "react-icons/hi2"; // Open Call Applications
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -122,6 +123,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           label: "Customers",
           icon: <HiOutlineIdentification size={22} />,
           href: "/customers",
+        },
+        {
+          id: "open-call",
+          label: "Open Call Applications",
+          icon: <HiOutlineClipboardDocumentList size={22} />,
+          href: "/open-call",
         },
         {
           id: "partners",

@@ -118,7 +118,7 @@ export default function OpenCallPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, email, or phone…"
+            placeholder="Search by name, email, or WhatsApp number…"
             className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-gray-600"
           />
         </form>

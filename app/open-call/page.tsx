@@ -185,14 +185,14 @@ export default function OpenCallPage() {
                     className="border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors cursor-pointer"
                   >
                     <td className="p-4">
-                      <p className="text-sm text-[#F4F4F5] font-semibold">{app.applicant.fullName}</p>
-                      <p className="text-xs text-[#9F9FA9]">{app.applicant.email}</p>
+                      <p className="text-sm text-[#F4F4F5] font-semibold">{app.applicant?.fullName}</p>
+                      <p className="text-xs text-[#9F9FA9]">{app.applicant?.email}</p>
                     </td>
-                    <td className="p-4 text-sm text-[#9F9FA9]">{app.category.name}</td>
+                    <td className="p-4 text-sm text-[#9F9FA9]">{app.category?.name}</td>
                     <td className="p-4">
                       <StatusBadge status={app.status} />
                     </td>
-                    <td className="p-4 text-sm text-[#9F9FA9]">{formatDate(app.submittedAt)}</td>
+                    <td className="p-4 text-sm text-[#9F9FA9]">{formatDate(app?.submittedAt)}</td>
                   </tr>
                 ))}
               </tbody>

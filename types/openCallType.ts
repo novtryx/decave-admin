@@ -45,7 +45,7 @@ export type ApplicationListItem = {
   status: ApplicationStatus;
   createdAt: string;
   submittedAt: string | null;
-  applicant: { fullName: string; email: string; phoneNumber: string; country?: string; city?: string };
+  applicant: { fullName: string; email: string; whatsappNumber: string; country?: string; city?: string };
   category: { name: string; slug: string };
 };
 

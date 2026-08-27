@@ -135,7 +135,7 @@ export default function ApplicationDetailModal({
                 <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 space-y-2">
                   <DetailRow label="Name" value={detail.applicant.fullName} />
                   <DetailRow label="Email" value={detail.applicant.email} />
-                  <DetailRow label="Phone" value={detail.applicant.phoneNumber} />
+                  <DetailRow label="Whatsapp" value={detail.applicant.whatsappNumber} />
                   {detail.applicant.country && (
                     <DetailRow
                       label="Location"

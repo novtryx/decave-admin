@@ -19,6 +19,8 @@ import { MdOutlineStorefront } from "react-icons/md";       // Other Events
 import { HiOutlineClipboardDocumentList } from "react-icons/hi2"; // Open Call Applications
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getSessionUser } from "@/app/actions/auth";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -46,8 +48,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleMinimize,
 }) => {
   const pathname = usePathname();
+  const [isManagement, setIsManagement] = useState(false);
 
-  const menuGroups: MenuGroup[] = [
+  useEffect(() => {
+    getSessionUser().then((u) => setIsManagement(u.isManagement));
+  }, []);
+
+  const allMenuGroups: MenuGroup[] = [
     {
       items: [
         {
@@ -167,6 +174,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ],
     },
   ];
+
+  // Management accounts only see Check-In
+  const menuGroups: MenuGroup[] = isManagement
+    ? allMenuGroups
+        .map((g) => ({ ...g, items: g.items.filter((i) => i.id === "check-in") }))
+        .filter((g) => g.items.length > 0)
+    : allMenuGroups;
 
   const activePath = pathname === "/" ? "/dashboard" : pathname;
 

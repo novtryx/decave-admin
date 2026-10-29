@@ -221,7 +221,7 @@ export default function OtpForm({ onBack, email }: OtpFormProps) {
 
         // Wait for success message, then do a hard redirect
         setTimeout(() => {
-          window.location.href = "/dashboard";
+          window.location.href = res.isManagement ? "/check-in" : "/dashboard";
         }, 1500);
       }
     } catch (err: any) {

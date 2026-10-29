@@ -56,7 +56,8 @@
 // app/actions/login.ts
 "use server";
 
-import { deleteAccessToken, setAccessToken } from "@/lib/authCookies";
+import { deleteAccessToken, setAccessToken, setFullName, getFullName, getAccessToken } from "@/lib/authCookies";
+import { getFullNameFromToken, isManagementName } from "@/lib/session";
 import { protectedFetch } from "@/lib/protectedFetch";
 import { publicFetch } from "@/lib/publicFetch";
 
@@ -80,8 +81,8 @@ export async function loginAction(
 export async function verifyOTPAction(
   email: string,
   otp: string  
-): Promise<{ token: string } | { error: string }> { // ✅ Add return type
-  const res = await publicFetch<{ token: string }>("/auth/verify-otp", {
+): Promise<{ token: string; isManagement?: boolean } | { error: string }> { // ✅ Add return type
+  const res = await publicFetch<{ token: string; data?: { fullName?: string } }>("/auth/verify-otp", {
     method: "POST",
     body: { email, otp },
   });
@@ -91,7 +92,13 @@ export async function verifyOTPAction(
   }
   
   await setAccessToken(res.data.token);
-  return res.data;
+
+  // Work out who logged in (response body first, then the token itself)
+  const fullName =
+    res.data.data?.fullName ?? getFullNameFromToken(res.data.token) ?? "";
+  if (fullName) await setFullName(fullName);
+
+  return { token: res.data.token, isManagement: isManagementName(fullName) };
 }
 
 export async function resendOTPAction(
@@ -120,4 +127,11 @@ export async function logoutAction(): Promise<{ message: string; success: boolea
   
   deleteAccessToken();
   return res.data;
+}
+
+// Used by the client (sidebar/header) to know who is logged in.
+export async function getSessionUser(): Promise<{ fullName: string | null; isManagement: boolean }> {
+  const token = await getAccessToken();
+  const fullName = getFullNameFromToken(token) ?? (await getFullName());
+  return { fullName, isManagement: isManagementName(fullName) };
 }

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AiOutlineMenu, AiOutlineBell, AiOutlineLogout } from 'react-icons/ai';
 import { FaRegBell } from 'react-icons/fa6';
@@ -21,10 +20,12 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onLogout }) => {
 
   const handleLogout = async() => {
     startLoading()
-    const res = await logoutAction()
-    
-    window.location.href = "/"
-    stopLoading()
+    try {
+      await logoutAction()
+    } finally {
+      stopLoading()
+      window.location.replace("/")
+    }
   }
   return (
     <header className="h-23 bg-[#151515] flex items-center justify-between px-4 lg:px-6">
@@ -89,4 +90,3 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, onLogout }) => {
     </header>
   );
 };
-

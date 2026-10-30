@@ -116,17 +116,23 @@ export async function resendOTPAction(
   return res.data;
 }
 
-export async function logoutAction(): Promise<{ message: string; success: boolean } | { error: string }> { // ✅ Add return type
-  const res = await protectedFetch<{ message: string, success: boolean }>("/auth/logout", {
-    method: "POST",
-  });
-  
-  if (!res.success) {
-    return { error: res.error };
+export async function logoutAction(): Promise<{ message: string; success: boolean } | { error: string }> {
+  let result: { message: string; success: boolean } | { error: string };
+
+  try {
+    const res = await protectedFetch<{ message: string; success: boolean }>("/auth/logout", {
+      method: "POST",
+    });
+    result = res.success ? res.data : { error: res.error };
+  } catch (e) {
+    result = { error: "Could not reach the server" };
   }
-  
-  deleteAccessToken();
-  return res.data;
+
+  // Always clear the local session, even if the backend call failed
+  // (expired/revoked token, network error) - otherwise the user is stuck logged in.
+  await deleteAccessToken();
+
+  return result;
 }
 
 // Used by the client (sidebar/header) to know who is logged in.
